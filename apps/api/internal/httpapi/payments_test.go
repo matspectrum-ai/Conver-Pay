@@ -35,9 +35,9 @@ func TestPaymentHTTPContract(t *testing.T) {
 		Circuit: domain.CircuitClosed, Priority: 1,
 	})
 	adapter := providerfake.New("provider_a", []provider.CreateOutcome{{
-		Kind: provider.CreateSucceeded,
+		Kind:              provider.CreateSucceeded,
 		ProviderPaymentID: "provider-payment-1",
-		Pix: &domain.Pix{CopyPaste: "000201-test-pix", ExpiresAt: time.Date(2026, 9, 7, 6, 0, 0, 0, time.UTC)},
+		Pix:               &domain.Pix{CopyPaste: "000201-test-pix", ExpiresAt: time.Date(2026, 9, 7, 6, 0, 0, 0, time.UTC)},
 	}}, nil)
 	service := orchestration.New(orchestration.Options{
 		Repository: store,
@@ -144,14 +144,14 @@ func TestCreatePaymentValidation(t *testing.T) {
 	service := orchestration.New(orchestration.Options{Repository: memory.New(), Providers: providerfake.Registry{}})
 	server := New(Options{
 		Payments: service,
-		APIKeys: staticResolver{"key": {APIKeyID: "k", WorkspaceID: "ws", Environment: domain.EnvironmentTest}},
+		APIKeys:  staticResolver{"key": {APIKeyID: "k", WorkspaceID: "ws", Environment: domain.EnvironmentTest}},
 	})
 
 	tests := []struct {
-		name string
+		name        string
 		idempotency string
-		body string
-		want int
+		body        string
+		want        int
 	}{
 		{name: "missing idempotency", body: `{"merchant_order_id":"o","amount":1,"currency":"BRL"}`, want: http.StatusBadRequest},
 		{name: "invalid amount", idempotency: "i1", body: `{"merchant_order_id":"o","amount":0,"currency":"BRL"}`, want: http.StatusBadRequest},
