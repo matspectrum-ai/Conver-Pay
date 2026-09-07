@@ -14,19 +14,26 @@ func (s *Store) UpsertWebhookEndpoint(ctx context.Context, endpoint *webhookdeli
 	err := s.pool.QueryRow(ctx, `
 		INSERT INTO conver_pay.merchant_webhook_endpoints (
 			id, workspace_id, environment, url, signing_secret_ciphertext,
-			enabled, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+			enabled, active_since, created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 		ON CONFLICT (workspace_id, environment) DO UPDATE SET
 			url=EXCLUDED.url,
 			signing_secret_ciphertext=EXCLUDED.signing_secret_ciphertext,
 			enabled=EXCLUDED.enabled,
+			active_since=CASE
+				WHEN conver_pay.merchant_webhook_endpoints.enabled
+					THEN conver_pay.merchant_webhook_endpoints.active_since
+				ELSE EXCLUDED.active_since
+			END,
 			updated_at=EXCLUDED.updated_at
 		RETURNING id, workspace_id, environment, url, signing_secret_ciphertext,
-			enabled, created_at, updated_at
+			enabled, active_since, created_at, updated_at
 	`, endpoint.ID, endpoint.WorkspaceID, endpoint.Environment, endpoint.URL,
-		endpoint.SigningSecretCiphertext, endpoint.Enabled, endpoint.CreatedAt, endpoint.UpdatedAt,
+		endpoint.SigningSecretCiphertext, endpoint.Enabled, endpoint.ActiveSince,
+		endpoint.CreatedAt, endpoint.UpdatedAt,
 	).Scan(&saved.ID, &saved.WorkspaceID, &saved.Environment, &saved.URL,
-		&saved.SigningSecretCiphertext, &saved.Enabled, &saved.CreatedAt, &saved.UpdatedAt)
+		&saved.SigningSecretCiphertext, &saved.Enabled, &saved.ActiveSince,
+		&saved.CreatedAt, &saved.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("upsert webhook endpoint: %w", err)
 	}
@@ -37,12 +44,12 @@ func (s *Store) GetWebhookEndpoint(ctx context.Context, workspaceID string, envi
 	var endpoint webhookdelivery.Endpoint
 	err := s.pool.QueryRow(ctx, `
 		SELECT id, workspace_id, environment, url, signing_secret_ciphertext,
-			enabled, created_at, updated_at
+			enabled, active_since, created_at, updated_at
 		FROM conver_pay.merchant_webhook_endpoints
 		WHERE workspace_id=$1 AND environment=$2
 	`, workspaceID, environment).Scan(&endpoint.ID, &endpoint.WorkspaceID, &endpoint.Environment,
 		&endpoint.URL, &endpoint.SigningSecretCiphertext, &endpoint.Enabled,
-		&endpoint.CreatedAt, &endpoint.UpdatedAt)
+		&endpoint.ActiveSince, &endpoint.CreatedAt, &endpoint.UpdatedAt)
 	if err != nil {
 		return nil, mapNotFound(err)
 	}
@@ -84,7 +91,7 @@ func (s *Store) MaterializePendingDeliveries(ctx context.Context, now time.Time,
 				ON endpoint.workspace_id=me.workspace_id
 				AND endpoint.environment=scope.environment
 				AND endpoint.enabled=true
-			WHERE me.created_at >= endpoint.updated_at
+			WHERE me.created_at >= endpoint.active_since
 				AND NOT EXISTS (
 					SELECT 1 FROM conver_pay.webhook_deliveries existing
 					WHERE existing.merchant_event_id=me.id
