@@ -17,7 +17,9 @@ import (
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/logging"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/orchestration"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/secretbox"
 	storepostgres "github.com/matspectrum-ai/conver-pay/apps/api/internal/store/postgres"
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/webhookdelivery"
 )
 
 func main() {
@@ -35,6 +37,8 @@ func main() {
 	var db *database.DB
 	var payments httpapi.PaymentService
 	var providerWebhooks httpapi.ProviderWebhookService
+	var merchantWebhooks httpapi.MerchantWebhookService
+	var webhookWorker *webhookdelivery.Service
 	var apiKeys authn.Resolver
 	if cfg.DatabaseURL != "" {
 		connectCtx, cancel := context.WithTimeout(ctx, cfg.DatabaseConnectTimeout)
@@ -54,6 +58,32 @@ func main() {
 		payments = orchestrator
 		providerWebhooks = orchestrator
 		apiKeys = store
+
+		if cfg.WebhookSecretMasterKey != "" {
+			box, boxErr := secretbox.NewBase64(cfg.WebhookSecretMasterKey)
+			if boxErr != nil {
+				logger.Error("invalid webhook secret master key", "error", boxErr)
+				os.Exit(1)
+			}
+			allowLocal := cfg.AppEnv == "development" || cfg.AppEnv == "test"
+			webhookService, serviceErr := webhookdelivery.New(webhookdelivery.Options{
+				Repository: store,
+				Cipher:     box,
+				Sender: webhookdelivery.NewHTTPSender(webhookdelivery.HTTPOptions{
+					Timeout:             cfg.WebhookHTTPTimeout,
+					AllowPrivateTargets: allowLocal,
+				}),
+				AllowInsecureLocalTargets: allowLocal,
+			})
+			if serviceErr != nil {
+				logger.Error("webhook delivery initialization failed", "error", serviceErr)
+				os.Exit(1)
+			}
+			merchantWebhooks = webhookService
+			webhookWorker = webhookService
+		} else {
+			logger.Warn("WEBHOOK_SECRET_MASTER_KEY is not configured; merchant webhook delivery is disabled")
+		}
 	} else {
 		logger.Warn("DATABASE_URL is not configured; readiness will report unavailable")
 	}
@@ -64,9 +94,14 @@ func main() {
 		Database:         db,
 		Payments:         payments,
 		ProviderWebhooks: providerWebhooks,
+		MerchantWebhooks: merchantWebhooks,
 		APIKeys:          apiKeys,
 		ShutdownTimeout:  cfg.ShutdownTimeout,
 	})
+
+	if webhookWorker != nil {
+		go runWebhookWorker(ctx, logger, webhookWorker, cfg.WebhookWorkerInterval)
+	}
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -91,4 +126,27 @@ func main() {
 	}
 
 	logger.Info("api stopped", "at", time.Now().UTC().Format(time.RFC3339))
+}
+
+func runWebhookWorker(ctx context.Context, logger *slog.Logger, worker *webhookdelivery.Service, interval time.Duration) {
+	if interval <= 0 {
+		interval = time.Second
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		processed, err := worker.RunOnce(ctx)
+		if err != nil && !errors.Is(err, context.Canceled) {
+			logger.Error("webhook worker iteration failed", "error", err)
+		} else if processed > 0 {
+			logger.Info("webhook deliveries processed", "count", processed)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

@@ -1,6 +1,11 @@
 package config
 
-import "testing"
+import (
+	"encoding/base64"
+	"strings"
+	"testing"
+	"time"
+)
 
 func TestLoadDefaults(t *testing.T) {
 	t.Setenv("APP_ENV", "")
@@ -9,6 +14,9 @@ func TestLoadDefaults(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 	t.Setenv("DATABASE_CONNECT_TIMEOUT", "")
 	t.Setenv("SHUTDOWN_TIMEOUT", "")
+	t.Setenv("WEBHOOK_SECRET_MASTER_KEY", "")
+	t.Setenv("WEBHOOK_WORKER_INTERVAL", "")
+	t.Setenv("WEBHOOK_HTTP_TIMEOUT", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -20,13 +28,46 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.HTTPAddr != ":8080" {
 		t.Fatalf("HTTPAddr = %q, want :8080", cfg.HTTPAddr)
 	}
+	if cfg.WebhookWorkerInterval != time.Second || cfg.WebhookHTTPTimeout != 10*time.Second {
+		t.Fatalf("webhook defaults interval=%s timeout=%s", cfg.WebhookWorkerInterval, cfg.WebhookHTTPTimeout)
+	}
 }
 
 func TestProductionRequiresDatabaseURL(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("DATABASE_URL", "")
+	t.Setenv("WEBHOOK_SECRET_MASTER_KEY", validWebhookMasterKey())
 
 	if _, err := Load(); err == nil {
 		t.Fatal("Load() error = nil, want error")
 	}
+}
+
+func TestProductionRequiresWebhookMasterKey(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("DATABASE_URL", "postgres://example")
+	t.Setenv("WEBHOOK_SECRET_MASTER_KEY", "")
+
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), "WEBHOOK_SECRET_MASTER_KEY") {
+		t.Fatalf("Load() error = %v, want webhook master key error", err)
+	}
+}
+
+func TestProductionAcceptsRequiredWebhookConfiguration(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("DATABASE_URL", "postgres://example")
+	t.Setenv("WEBHOOK_SECRET_MASTER_KEY", validWebhookMasterKey())
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.WebhookSecretMasterKey == "" {
+		t.Fatal("WebhookSecretMasterKey is empty")
+	}
+}
+
+func validWebhookMasterKey() string {
+	return base64.StdEncoding.EncodeToString(make([]byte, 32))
 }
