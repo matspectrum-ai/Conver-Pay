@@ -34,6 +34,7 @@ func main() {
 
 	var db *database.DB
 	var payments httpapi.PaymentService
+	var providerWebhooks httpapi.ProviderWebhookService
 	var apiKeys authn.Resolver
 	if cfg.DatabaseURL != "" {
 		connectCtx, cancel := context.WithTimeout(ctx, cfg.DatabaseConnectTimeout)
@@ -46,22 +47,25 @@ func main() {
 		defer db.Close()
 
 		store := storepostgres.New(db.Pool())
-		payments = orchestration.New(orchestration.Options{
+		orchestrator := orchestration.New(orchestration.Options{
 			Repository: store,
 			Providers:  provider.MapRegistry{},
 		})
+		payments = orchestrator
+		providerWebhooks = orchestrator
 		apiKeys = store
 	} else {
 		logger.Warn("DATABASE_URL is not configured; readiness will report unavailable")
 	}
 
 	server := httpapi.New(httpapi.Options{
-		Addr:            cfg.HTTPAddr,
-		Logger:          logger,
-		Database:        db,
-		Payments:        payments,
-		APIKeys:         apiKeys,
-		ShutdownTimeout: cfg.ShutdownTimeout,
+		Addr:             cfg.HTTPAddr,
+		Logger:           logger,
+		Database:         db,
+		Payments:         payments,
+		ProviderWebhooks: providerWebhooks,
+		APIKeys:          apiKeys,
+		ShutdownTimeout:  cfg.ShutdownTimeout,
 	})
 
 	errCh := make(chan error, 1)
