@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/domain"
 )
@@ -16,24 +17,30 @@ type idempotencyRecord struct {
 type Store struct {
 	mu sync.Mutex
 
-	payments        map[string]*domain.PaymentIntent
-	idempotency     map[string]idempotencyRecord
-	providers       map[string][]domain.ProviderConnection
-	attempts        map[string]*domain.PaymentAttempt
-	attemptsByPay   map[string][]string
-	decisionsByPay  map[string][]domain.RoutingDecision
-	recoveriesByPay map[string][]domain.RecoveryEvent
+	payments          map[string]*domain.PaymentIntent
+	idempotency       map[string]idempotencyRecord
+	providers         map[string][]domain.ProviderConnection
+	attempts          map[string]*domain.PaymentAttempt
+	attemptsByPay     map[string][]string
+	decisionsByPay    map[string][]domain.RoutingDecision
+	recoveriesByPay   map[string][]domain.RecoveryEvent
+	providerEvents    map[string]domain.ProviderEvent
+	merchantEvents    map[string][]domain.MerchantEvent
+	merchantEventKeys map[string]bool
 }
 
 func New() *Store {
 	return &Store{
-		payments:        map[string]*domain.PaymentIntent{},
-		idempotency:     map[string]idempotencyRecord{},
-		providers:       map[string][]domain.ProviderConnection{},
-		attempts:        map[string]*domain.PaymentAttempt{},
-		attemptsByPay:   map[string][]string{},
-		decisionsByPay:  map[string][]domain.RoutingDecision{},
-		recoveriesByPay: map[string][]domain.RecoveryEvent{},
+		payments:          map[string]*domain.PaymentIntent{},
+		idempotency:       map[string]idempotencyRecord{},
+		providers:         map[string][]domain.ProviderConnection{},
+		attempts:          map[string]*domain.PaymentAttempt{},
+		attemptsByPay:     map[string][]string{},
+		decisionsByPay:    map[string][]domain.RoutingDecision{},
+		recoveriesByPay:   map[string][]domain.RecoveryEvent{},
+		providerEvents:    map[string]domain.ProviderEvent{},
+		merchantEvents:    map[string][]domain.MerchantEvent{},
+		merchantEventKeys: map[string]bool{},
 	}
 }
 
@@ -84,6 +91,20 @@ func (s *Store) ListProviderConnections(_ context.Context, workspaceID string) (
 	return append([]domain.ProviderConnection(nil), s.providers[workspaceID]...), nil
 }
 
+func (s *Store) GetProviderConnection(_ context.Context, id string) (*domain.ProviderConnection, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, connections := range s.providers {
+		for i := range connections {
+			if connections[i].ID == id {
+				conn := connections[i]
+				return &conn, nil
+			}
+		}
+	}
+	return nil, domain.ErrNotFound
+}
+
 func (s *Store) AddAttemptWithRoutingDecision(_ context.Context, attempt *domain.PaymentAttempt, decision *domain.RoutingDecision) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -119,6 +140,17 @@ func (s *Store) GetAttempt(_ context.Context, id string) (*domain.PaymentAttempt
 	return cloneAttempt(attempt), nil
 }
 
+func (s *Store) GetAttemptByProviderPaymentID(_ context.Context, providerConnectionID, providerPaymentID string) (*domain.PaymentAttempt, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, attempt := range s.attempts {
+		if attempt.ProviderConnectionID == providerConnectionID && attempt.ProviderPaymentID == providerPaymentID {
+			return cloneAttempt(attempt), nil
+		}
+	}
+	return nil, domain.ErrNotFound
+}
+
 func (s *Store) ListAttempts(_ context.Context, paymentID string) ([]domain.PaymentAttempt, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -151,6 +183,67 @@ func (s *Store) ListRecoveryEvents(_ context.Context, paymentID string) ([]domai
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]domain.RecoveryEvent(nil), s.recoveriesByPay[paymentID]...), nil
+}
+
+func (s *Store) RecordProviderEvent(_ context.Context, event *domain.ProviderEvent) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	key := event.ProviderConnectionID + "\x00" + event.ExternalEventID
+	if _, exists := s.providerEvents[key]; exists {
+		return false, nil
+	}
+	s.providerEvents[key] = *event
+	return true, nil
+}
+
+func (s *Store) MarkProviderEventProcessed(_ context.Context, id string, processedAt time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for key, event := range s.providerEvents {
+		if event.ID == id {
+			t := processedAt
+			event.ProcessedAt = &t
+			s.providerEvents[key] = event
+			return nil
+		}
+	}
+	return domain.ErrNotFound
+}
+
+func (s *Store) MarkPaymentPaidWithEvents(_ context.Context, intent *domain.PaymentIntent, recovery *domain.RecoveryEvent, events []domain.MerchantEvent) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.payments[intent.ID]; !ok {
+		return domain.ErrNotFound
+	}
+
+	s.payments[intent.ID] = clonePayment(intent)
+	if recovery != nil && len(s.recoveriesByPay[recovery.PaymentIntentID]) == 0 {
+		s.recoveriesByPay[recovery.PaymentIntentID] = []domain.RecoveryEvent{*recovery}
+	}
+	for _, event := range events {
+		if s.merchantEventKeys[event.EventKey] {
+			continue
+		}
+		s.merchantEventKeys[event.EventKey] = true
+		copy := event
+		copy.Payload = append([]byte(nil), event.Payload...)
+		s.merchantEvents[event.WorkspaceID] = append(s.merchantEvents[event.WorkspaceID], copy)
+	}
+	return nil
+}
+
+func (s *Store) ListMerchantEvents(_ context.Context, workspaceID string) ([]domain.MerchantEvent, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	events := s.merchantEvents[workspaceID]
+	out := make([]domain.MerchantEvent, 0, len(events))
+	for _, event := range events {
+		copy := event
+		copy.Payload = append([]byte(nil), event.Payload...)
+		out = append(out, copy)
+	}
+	return out, nil
 }
 
 func clonePayment(in *domain.PaymentIntent) *domain.PaymentIntent {
