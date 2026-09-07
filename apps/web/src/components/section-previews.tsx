@@ -1,6 +1,6 @@
 import { Icons } from "./icons";
 import { RoutingMap } from "./routing-map";
-import { payments, providers, recoveries } from "@/lib/dashboard-data";
+import { payments, providers, recoveries, type Payment } from "@/lib/dashboard-data";
 
 function PageHeader({ kicker, title, copy }: { kicker: string; title: string; copy: string }) {
   return <section className="subpage-header"><div><p className="eyebrow">{kicker}</p><h1>{title}</h1><p>{copy}</p></div></section>;
@@ -10,20 +10,20 @@ function MiniMetric({ label, value, detail, tone }: { label: string; value: stri
   return <div className="metric"><span>{label}</span><strong className={tone === "green" ? "text-green" : ""}>{value}</strong><small>{detail}</small></div>;
 }
 
-function PaymentsView() {
+function PaymentsView({ onOpenPayment }: { onOpenPayment: (payment: Payment) => void }) {
   return <>
     <PageHeader kicker="PAYMENTS" title="Payments" copy="Every Pix intent, provider attempt and canonical state in one operational view." />
     <section className="metric-strip subpage-metrics"><MiniMetric label="Created" value="11,083" detail="Last 7 days"/><MiniMetric label="Paid" value="8,491" detail="76.8% conversion"/><MiniMetric label="Reconciling" value="7" detail="0.06% of volume"/><MiniMetric label="p95 QR latency" value="418 ms" detail="Across all providers"/></section>
     <div className="section-toolbar"><div className="inline-search"><Icons.search className="icon"/>Search payment, order or provider…<kbd>/</kbd></div><div><button className="ghost-button">Status</button><button className="ghost-button">Provider</button><button className="ghost-button">Date</button></div></div>
-    <div className="table-wrap"><table><thead><tr><th>Payment</th><th>Order</th><th>Amount</th><th>Provider</th><th>Status</th><th>QR latency</th><th>Created</th></tr></thead><tbody>{payments.concat(payments.slice(0,2)).map((payment,index)=><tr key={payment.id+index}><td><button className="mono-link">{payment.id}</button></td><td className="muted-cell">{payment.order}</td><td className="amount-cell">{payment.amount}</td><td>{payment.provider}</td><td><span className={`status status-${payment.status.toLowerCase()}`}><i/>{payment.status}</span></td><td className="muted-cell">{payment.latency}</td><td className="muted-cell">{payment.age}</td></tr>)}</tbody></table></div>
+    <div className="table-wrap"><table><thead><tr><th>Payment</th><th>Order</th><th>Amount</th><th>Provider</th><th>Status</th><th>QR latency</th><th>Created</th></tr></thead><tbody>{payments.concat(payments.slice(0,2)).map((payment,index)=><tr key={payment.id+index}><td><button className="mono-link" onClick={() => onOpenPayment(payment)}>{payment.id}</button></td><td className="muted-cell">{payment.order}</td><td className="amount-cell">{payment.amount}</td><td>{payment.provider}</td><td><span className={`status status-${payment.status.toLowerCase()}`}><i/>{payment.status}</span></td><td className="muted-cell">{payment.latency}</td><td className="muted-cell">{payment.age}</td></tr>)}</tbody></table></div>
   </>;
 }
 
-function RecoveriesView() {
+function RecoveriesView({ onOpenPayment }: { onOpenPayment: (payment: Payment) => void }) {
   return <>
     <PageHeader kicker="RECOVERED REVENUE" title="Recoveries" copy="Only payments with auditable primary failure, fallback and successful settlement are attributed here." />
     <section className="metric-strip subpage-metrics"><MiniMetric label="Recovered revenue" value="R$ 31.892" detail="Last 7 days" tone="green"/><MiniMetric label="Recovered payments" value="184" detail="1.66% of intents"/><MiniMetric label="Median recovery" value="1.8s" detail="Failure → fallback QR"/><MiniMetric label="Top recovery path" value="BlackCat → Woovi" detail="R$ 18.204 protected"/></section>
-    <section className="two-column-detail"><div className="panel"><div className="panel-header compact"><div><span className="section-kicker">LATEST</span><h2>Recovery evidence</h2></div><span className="live-label"><span className="live-dot"/>live</span></div><div className="recovery-list expanded">{recoveries.concat(recoveries).map((r,i)=><div className="recovery-row" key={r.id+i}><div className="recovery-icon">↗</div><div className="recovery-main"><strong>{r.amount}</strong><span>{r.from} <b>→</b> {r.to}</span></div><span className="recovery-reason">{r.reason}</span><time>{i<3?r.age:`${i+1}m`}</time></div>)}</div></div><div className="panel evidence-panel"><span className="section-kicker">EVIDENCE SAMPLE</span><h2>rec_4821</h2><div className="evidence-timeline"><div className="failed"><i/><span>20:31:02.117</span><strong>BlackCat</strong><b>503 SERVICE_UNAVAILABLE</b></div><div><i/><span>20:31:02.184</span><strong>Conver</strong><b>Failover triggered</b></div><div><i/><span>20:31:02.401</span><strong>Woovi</strong><b>PIX_CREATED · 201ms</b></div><div className="success"><i/><span>20:33:11.819</span><strong>Pix</strong><b>PAID · R$ 197,00</b></div></div><button className="ghost-button">Open full payment <Icons.arrow className="icon"/></button></div></section>
+    <section className="two-column-detail"><div className="panel"><div className="panel-header compact"><div><span className="section-kicker">LATEST</span><h2>Recovery evidence</h2></div><span className="live-label"><span className="live-dot"/>live</span></div><div className="recovery-list expanded">{recoveries.concat(recoveries).map((r,i)=><div className="recovery-row" key={r.id+i}><div className="recovery-icon">↗</div><div className="recovery-main"><strong>{r.amount}</strong><span>{r.from} <b>→</b> {r.to}</span></div><span className="recovery-reason">{r.reason}</span><time>{i<3?r.age:`${i+1}m`}</time></div>)}</div></div><div className="panel evidence-panel"><span className="section-kicker">EVIDENCE SAMPLE</span><h2>rec_4821</h2><div className="evidence-timeline"><div className="failed"><i/><span>20:31:02.117</span><strong>BlackCat</strong><b>503 SERVICE_UNAVAILABLE</b></div><div><i/><span>20:31:02.184</span><strong>Conver</strong><b>Failover triggered</b></div><div><i/><span>20:31:02.401</span><strong>Woovi</strong><b>PIX_CREATED · 201ms</b></div><div className="success"><i/><span>20:33:11.819</span><strong>Pix</strong><b>PAID · R$ 197,00</b></div></div><button className="ghost-button" onClick={() => onOpenPayment(payments[1])}>Open full payment <Icons.arrow className="icon"/></button></div></section>
   </>;
 }
 
@@ -65,10 +65,10 @@ function SettingsView() {
   return <><PageHeader kicker="WORKSPACE" title="Settings" copy="Workspace identity and environment controls. Secrets remain write-only."/><section className="settings-stack"><div className="panel settings-group"><div className="panel-header compact"><div><span className="section-kicker">GENERAL</span><h2>Workspace</h2></div></div><div className="settings-row"><div><strong>Name</strong><span>Shown across the Conver Pay workspace.</span></div><button className="field-button">Conver Pay</button></div><div className="settings-row"><div><strong>Environment</strong><span>Current operational context.</span></div><button className="field-button"><span className="live-dot"/> Live</button></div></div><div className="panel settings-group"><div className="panel-header compact"><div><span className="section-kicker">DANGER ZONE</span><h2>Operational controls</h2></div></div><div className="settings-row"><div><strong>Provider kill switch</strong><span>Immediately stop new routing while preserving reconciliation.</span></div><button className="danger-button">Disable routing</button></div></div></section></>;
 }
 
-export function SectionPreview({ section }: { section: string }) {
+export function SectionPreview({ section, onOpenPayment }: { section: string; onOpenPayment: (payment: Payment) => void }) {
   switch(section){
-    case 'Payments': return <PaymentsView/>;
-    case 'Recoveries': return <RecoveriesView/>;
+    case 'Payments': return <PaymentsView onOpenPayment={onOpenPayment}/>;
+    case 'Recoveries': return <RecoveriesView onOpenPayment={onOpenPayment}/>;
     case 'Routing': return <RoutingView/>;
     case 'Providers': return <ProvidersView/>;
     case 'Observability': return <ObservabilityView/>;
