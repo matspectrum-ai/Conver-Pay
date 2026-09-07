@@ -100,11 +100,11 @@ func handleDeleteWebhookEndpoint(service MerchantWebhookService) authorizedHandl
 
 func toWebhookEndpointResponse(endpoint *webhookdelivery.Endpoint) webhookEndpointResponse {
 	return webhookEndpointResponse{
-		ID: endpoint.ID,
-		URL: endpoint.URL,
+		ID:          endpoint.ID,
+		URL:         endpoint.URL,
 		Environment: endpoint.Environment,
-		Enabled: endpoint.Enabled,
-		CreatedAt: endpoint.CreatedAt,
-		UpdatedAt: endpoint.UpdatedAt,
+		Enabled:     endpoint.Enabled,
+		CreatedAt:   endpoint.CreatedAt,
+		UpdatedAt:   endpoint.UpdatedAt,
 	}
 }

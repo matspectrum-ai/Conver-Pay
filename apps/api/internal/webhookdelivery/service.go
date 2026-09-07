@@ -177,10 +177,10 @@ func (s *Service) processJob(ctx context.Context, job Job) error {
 	} else {
 		result = s.sender.Send(ctx, SendRequest{
 			EventID: job.MerchantEventID,
-			URL: job.TargetURL,
+			URL:     job.TargetURL,
 			Payload: append([]byte(nil), job.Payload...),
-			Secret: secret,
-			Now: startedAt,
+			Secret:  secret,
+			Now:     startedAt,
 		})
 	}
 	completedAt := s.clock.Now()
@@ -203,17 +203,17 @@ func (s *Service) processJob(ctx context.Context, job Job) error {
 	}
 
 	completion := Completion{
-		DeliveryID: job.DeliveryID,
-		AttemptID: s.ids.New("wha"),
-		Sequence: sequence,
-		Status: status,
-		StartedAt: startedAt,
-		CompletedAt: completedAt,
-		HTTPStatus: result.HTTPStatus,
-		Latency: result.Latency,
-		ErrorCode: result.ErrorCode,
+		DeliveryID:    job.DeliveryID,
+		AttemptID:     s.ids.New("wha"),
+		Sequence:      sequence,
+		Status:        status,
+		StartedAt:     startedAt,
+		CompletedAt:   completedAt,
+		HTTPStatus:    result.HTTPStatus,
+		Latency:       result.Latency,
+		ErrorCode:     result.ErrorCode,
 		NextAttemptAt: nextAttemptAt,
-		DeliveredAt: deliveredAt,
+		DeliveredAt:   deliveredAt,
 	}
 	return s.repo.CompleteDelivery(ctx, s.workerID, completion)
 }

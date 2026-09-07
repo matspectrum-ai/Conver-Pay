@@ -60,16 +60,16 @@ func NewHTTPSender(opts HTTPOptions) *HTTPSender {
 			}
 			return nil, errTargetNotPublic
 		},
-		TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12},
-		ForceAttemptHTTP2: true,
-		MaxIdleConns: 50,
-		MaxIdleConnsPerHost: 4,
-		IdleConnTimeout: 30 * time.Second,
+		TLSClientConfig:       &tls.Config{MinVersion: tls.VersionTLS12},
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          50,
+		MaxIdleConnsPerHost:   4,
+		IdleConnTimeout:       30 * time.Second,
 		ResponseHeaderTimeout: timeout,
-		DisableCompression: true,
+		DisableCompression:    true,
 	}
 	sender.client = &http.Client{
-		Timeout: timeout,
+		Timeout:   timeout,
 		Transport: transport,
 		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse

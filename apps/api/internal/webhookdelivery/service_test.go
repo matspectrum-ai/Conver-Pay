@@ -42,9 +42,9 @@ func (testCipher) Decrypt(ciphertext string) ([]byte, error) {
 }
 
 type testRepo struct {
-	endpoint    *Endpoint
-	jobs        []Job
-	completion  *Completion
+	endpoint     *Endpoint
+	jobs         []Job
+	completion   *Completion
 	materialized int64
 }
 
@@ -103,13 +103,13 @@ func (s *testSender) Send(_ context.Context, request SendRequest) SendResult {
 func newTestService(t *testing.T, repo *testRepo, sender Sender, maxAttempts int) *Service {
 	t.Helper()
 	service, err := New(Options{
-		Repository: repo,
-		Cipher: testCipher{},
-		Sender: sender,
-		Clock: &testClock{now: time.Date(2026, 9, 7, 8, 0, 0, 0, time.UTC)},
-		IDs: &testIDs{},
-		WorkerID: "worker_test",
-		MaxAttempts: maxAttempts,
+		Repository:                repo,
+		Cipher:                    testCipher{},
+		Sender:                    sender,
+		Clock:                     &testClock{now: time.Date(2026, 9, 7, 8, 0, 0, 0, time.UTC)},
+		IDs:                       &testIDs{},
+		WorkerID:                  "worker_test",
+		MaxAttempts:               maxAttempts,
 		AllowInsecureLocalTargets: true,
 	})
 	if err != nil {

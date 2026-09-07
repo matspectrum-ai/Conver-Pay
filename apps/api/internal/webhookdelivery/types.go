@@ -20,13 +20,13 @@ type Endpoint struct {
 }
 
 type Job struct {
-	DeliveryID             string
-	MerchantEventID        string
-	EventType              string
-	Payload                []byte
-	TargetURL              string
+	DeliveryID              string
+	MerchantEventID         string
+	EventType               string
+	Payload                 []byte
+	TargetURL               string
 	SigningSecretCiphertext string
-	AttemptCount           int
+	AttemptCount            int
 }
 
 type Completion struct {

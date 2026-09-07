@@ -57,7 +57,7 @@ func TestPostgresWebhookDeliveryLeaseRetryAndEnvironment(t *testing.T) {
 	}}, nil)
 	svc := orchestration.New(orchestration.Options{
 		Repository: store,
-		Providers: providerfake.Registry{"provider_test": adapter},
+		Providers:  providerfake.Registry{"provider_test": adapter},
 	})
 	intent, err := svc.CreatePayment(ctx, testCreateRequest("idem-delivery"))
 	if err != nil {

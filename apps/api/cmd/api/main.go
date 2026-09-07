@@ -68,9 +68,9 @@ func main() {
 			allowLocal := cfg.AppEnv == "development" || cfg.AppEnv == "test"
 			webhookService, serviceErr := webhookdelivery.New(webhookdelivery.Options{
 				Repository: store,
-				Cipher: box,
+				Cipher:     box,
 				Sender: webhookdelivery.NewHTTPSender(webhookdelivery.HTTPOptions{
-					Timeout: cfg.WebhookHTTPTimeout,
+					Timeout:             cfg.WebhookHTTPTimeout,
 					AllowPrivateTargets: allowLocal,
 				}),
 				AllowInsecureLocalTargets: allowLocal,

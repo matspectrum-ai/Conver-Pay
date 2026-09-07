@@ -94,7 +94,7 @@ func TestWebhookEndpointAPIRejectsShortSecret(t *testing.T) {
 	stub := &endpointHTTPStub{}
 	server := New(Options{
 		MerchantWebhooks: stub,
-		APIKeys: staticResolver{"key": {APIKeyID: "key", WorkspaceID: "ws", Environment: domain.EnvironmentTest}},
+		APIKeys:          staticResolver{"key": {APIKeyID: "key", WorkspaceID: "ws", Environment: domain.EnvironmentTest}},
 	})
 	response := performRequest(server.Handler, http.MethodPut, "/v1/webhook_endpoint", "key", "", `{"url":"https://merchant.example/hook","signing_secret":"short"}`)
 	if response.Code != http.StatusBadRequest {

@@ -8,15 +8,15 @@ import (
 )
 
 type Config struct {
-	AppEnv                   string
-	HTTPAddr                 string
-	LogLevel                 string
-	DatabaseURL              string
-	DatabaseConnectTimeout   time.Duration
-	ShutdownTimeout          time.Duration
-	WebhookSecretMasterKey   string
-	WebhookWorkerInterval    time.Duration
-	WebhookHTTPTimeout       time.Duration
+	AppEnv                 string
+	HTTPAddr               string
+	LogLevel               string
+	DatabaseURL            string
+	DatabaseConnectTimeout time.Duration
+	ShutdownTimeout        time.Duration
+	WebhookSecretMasterKey string
+	WebhookWorkerInterval  time.Duration
+	WebhookHTTPTimeout     time.Duration
 }
 
 func Load() (Config, error) {
