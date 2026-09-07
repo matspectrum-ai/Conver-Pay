@@ -1,0 +1,234 @@
+openapi: 3.1.0
+info:
+  title: Conver Pay API
+  version: 0.1.0
+  description: Provider-neutral Pix orchestration API. Conver Pay orchestrates merchant-owned payment providers and does not act as the Pix acquirer.
+servers:
+  - url: https://api.converpay.example
+security:
+  - bearerAuth: []
+paths:
+  /v1/payment_intents:
+    post:
+      operationId: createPaymentIntent
+      summary: Create or resolve an idempotent Pix payment intent
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentIntentRequest'
+      responses:
+        '200':
+          description: Payment intent created or existing idempotent result returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntent'
+        '202':
+          description: Provider outcome is ambiguous and reconciliation is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Idempotency key reused with a different request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: No provider is currently eligible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/payment_intents/{id}:
+    get:
+      operationId: getPaymentIntent
+      summary: Retrieve canonical payment state
+      parameters:
+        - $ref: '#/components/parameters/PaymentIntentID'
+      responses:
+        '200':
+          description: Payment intent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/payment_intents/{id}/attempts:
+    get:
+      operationId: listPaymentAttempts
+      summary: List provider attempts for a payment intent
+      parameters:
+        - $ref: '#/components/parameters/PaymentIntentID'
+      responses:
+        '200':
+          description: Attempt list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentAttempt'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Workspace API key. Test and live environments use separate keys.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+    PaymentIntentID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^pi_'
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Missing, invalid, or revoked API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource does not exist in the authenticated workspace
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    CreatePaymentIntentRequest:
+      type: object
+      additionalProperties: false
+      required: [merchant_order_id, amount, currency]
+      properties:
+        merchant_order_id:
+          type: string
+          maxLength: 255
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Amount in centavos.
+        currency:
+          type: string
+          enum: [BRL]
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    Pix:
+      type: object
+      required: [copy_paste, expires_at]
+      properties:
+        copy_paste:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    PaymentIntent:
+      type: object
+      required: [id, merchant_order_id, amount, currency, status, recovered, recovered_amount, created_at, updated_at]
+      properties:
+        id:
+          type: string
+        merchant_order_id:
+          type: string
+        amount:
+          type: integer
+          format: int64
+        currency:
+          type: string
+          enum: [BRL]
+        status:
+          type: string
+          enum: [created, routing, reconciling, awaiting_payment, paid, failed, expired, cancelled]
+        pix:
+          $ref: '#/components/schemas/Pix'
+        recovered:
+          type: boolean
+        recovered_amount:
+          type: integer
+          format: int64
+        failure_code:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        paid_at:
+          type: string
+          format: date-time
+    PaymentAttempt:
+      type: object
+      required: [id, provider_connection_id, sequence, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+        provider_connection_id:
+          type: string
+        sequence:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [created, requesting, succeeded, failed_safe, failed_terminal, unknown]
+        failure_code:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
