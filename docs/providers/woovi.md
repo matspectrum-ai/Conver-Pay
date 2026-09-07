@@ -53,3 +53,14 @@ Before marking Phase 4 complete, record observed sandbox evidence for:
 8. negative lookup consistency window sufficient to decide whether any `failed_safe` reconciliation policy is defensible.
 
 Until item 8 is proven, Woovi ambiguous creates intentionally block automatic cross-provider failover.
+
+## Running the sandbox probe
+
+The repository contains an opt-in test that is skipped unless a sandbox AppID is supplied at runtime:
+
+```bash
+cd apps/api
+WOOVI_SANDBOX_APP_ID='...' go test -run TestWooviSandboxProbe -v ./internal/provider/woovi
+```
+
+The probe validates the AppID, creates a R$0.01 sandbox charge, repeats creation with the same `correlationID`, and reconciles the charge by that correlation identity. The AppID is never printed or persisted by the test.
