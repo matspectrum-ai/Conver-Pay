@@ -13,12 +13,11 @@ type Repository interface {
 
 	ListProviderConnections(context.Context, string) ([]domain.ProviderConnection, error)
 
-	AddAttempt(context.Context, *domain.PaymentAttempt) error
+	AddAttemptWithRoutingDecision(context.Context, *domain.PaymentAttempt, *domain.RoutingDecision) error
 	SaveAttempt(context.Context, *domain.PaymentAttempt) error
 	GetAttempt(context.Context, string) (*domain.PaymentAttempt, error)
 	ListAttempts(context.Context, string) ([]domain.PaymentAttempt, error)
 
-	AddRoutingDecision(context.Context, *domain.RoutingDecision) error
 	ListRoutingDecisions(context.Context, string) ([]domain.RoutingDecision, error)
 
 	CreateRecoveryIfAbsent(context.Context, *domain.RecoveryEvent) (bool, error)
