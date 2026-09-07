@@ -10,7 +10,7 @@ import (
 var ErrUnauthorized = errors.New("unauthorized")
 
 type Principal struct {
-	APIKeyID   string
+	APIKeyID    string
 	WorkspaceID string
 	Environment domain.Environment
 }
