@@ -3,6 +3,7 @@ package orchestration
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/domain"
 )
@@ -66,36 +67,48 @@ func (s *Service) MarkPaidWithOutbox(ctx context.Context, paymentID, attemptID s
 	return intent, nil
 }
 
-func (s *Service) paymentMerchantEvents(intent *domain.PaymentIntent, now interface{ MarshalJSON() ([]byte, error) }) ([]domain.MerchantEvent, error) {
-	createdAt, ok := now.(interface{ String() string })
-	_ = createdAt
-	_ = ok
-	return nil, nil
+func (s *Service) paymentMerchantEvents(intent *domain.PaymentIntent, createdAt time.Time) ([]domain.MerchantEvent, error) {
+	paid, err := s.newMerchantEvent(intent, "payment.paid", "payment.paid:"+intent.ID, createdAt)
+	if err != nil {
+		return nil, err
+	}
+	events := []domain.MerchantEvent{paid}
+	if intent.Recovered {
+		recovered, err := s.newMerchantEvent(intent, "payment.recovered", "payment.recovered:"+intent.ID, createdAt)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, recovered)
+	}
+	return events, nil
 }
 
-func (s *Service) newMerchantEvent(intent *domain.PaymentIntent, eventType, eventKey string, createdAt interface{}) (domain.MerchantEvent, error) {
+func (s *Service) newMerchantEvent(intent *domain.PaymentIntent, eventType, eventKey string, createdAt time.Time) (domain.MerchantEvent, error) {
+	eventID := s.ids.New("evt")
 	payload, err := json.Marshal(map[string]any{
-		"id":   eventKey,
-		"type": eventType,
+		"id":         eventID,
+		"type":       eventType,
+		"created_at": createdAt,
 		"data": map[string]any{
-			"payment_id":       intent.ID,
+			"payment_id":        intent.ID,
 			"merchant_order_id": intent.MerchantOrderID,
-			"amount":           intent.Amount,
-			"currency":         intent.Currency,
-			"status":           intent.Status,
-			"recovered":        intent.Recovered,
-			"recovered_amount": intent.RecoveredAmount,
+			"amount":            intent.Amount,
+			"currency":          intent.Currency,
+			"status":            intent.Status,
+			"recovered":         intent.Recovered,
+			"recovered_amount":  intent.RecoveredAmount,
 		},
 	})
 	if err != nil {
 		return domain.MerchantEvent{}, err
 	}
 	return domain.MerchantEvent{
-		ID:              s.ids.New("evt"),
+		ID:              eventID,
 		WorkspaceID:     intent.WorkspaceID,
 		EventKey:        eventKey,
 		EventType:       eventType,
 		PaymentIntentID: intent.ID,
 		Payload:         payload,
+		CreatedAt:       createdAt,
 	}, nil
 }
