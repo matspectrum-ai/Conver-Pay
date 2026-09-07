@@ -84,7 +84,7 @@ func (s *Store) MaterializePendingDeliveries(ctx context.Context, now time.Time,
 				ON endpoint.workspace_id=me.workspace_id
 				AND endpoint.environment=scope.environment
 				AND endpoint.enabled=true
-			WHERE me.created_at >= endpoint.created_at
+			WHERE me.created_at >= endpoint.updated_at
 				AND NOT EXISTS (
 					SELECT 1 FROM conver_pay.webhook_deliveries existing
 					WHERE existing.merchant_event_id=me.id
