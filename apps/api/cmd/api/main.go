@@ -10,10 +10,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/authn"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/config"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/database"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/httpapi"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/logging"
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/orchestration"
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
+	storepostgres "github.com/matspectrum-ai/conver-pay/apps/api/internal/store/postgres"
 )
 
 func main() {
@@ -29,6 +33,8 @@ func main() {
 	defer stop()
 
 	var db *database.DB
+	var payments httpapi.PaymentService
+	var apiKeys authn.Resolver
 	if cfg.DatabaseURL != "" {
 		connectCtx, cancel := context.WithTimeout(ctx, cfg.DatabaseConnectTimeout)
 		db, err = database.Open(connectCtx, cfg.DatabaseURL)
@@ -38,6 +44,13 @@ func main() {
 			os.Exit(1)
 		}
 		defer db.Close()
+
+		store := storepostgres.New(db.Pool())
+		payments = orchestration.New(orchestration.Options{
+			Repository: store,
+			Providers:  provider.MapRegistry{},
+		})
+		apiKeys = store
 	} else {
 		logger.Warn("DATABASE_URL is not configured; readiness will report unavailable")
 	}
@@ -46,6 +59,8 @@ func main() {
 		Addr:            cfg.HTTPAddr,
 		Logger:          logger,
 		Database:        db,
+		Payments:        payments,
+		APIKeys:         apiKeys,
 		ShutdownTimeout: cfg.ShutdownTimeout,
 	})
 
