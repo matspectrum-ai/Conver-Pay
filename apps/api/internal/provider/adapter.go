@@ -57,7 +57,3 @@ type Adapter interface {
 	CreatePix(context.Context, CreateRequest) CreateOutcome
 	Reconcile(context.Context, ReconcileRequest) ReconcileOutcome
 }
-
-type Registry interface {
-	Get(providerKey string) (Adapter, bool)
-}

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Conver Pay API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Provider-neutral Pix orchestration API. Conver Pay orchestrates merchant-owned payment providers and does not act as the Pix acquirer.
 
@@ -88,6 +88,69 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/PaymentAttempt'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/provider_connections:
+    post:
+      operationId: connectProvider
+      summary: Validate and connect a merchant-owned payment provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectProviderRequest'
+      responses:
+        '201':
+          description: Provider connection created. Provider credentials are never returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderConnection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Provider credential validation is temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listProviderConnections
+      summary: List provider connections in the authenticated workspace and environment
+      responses:
+        '200':
+          description: Provider connections
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProviderConnection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/provider_connections/{id}:
+    delete:
+      operationId: disableProviderConnection
+      summary: Disable a provider connection in the authenticated environment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^pc_'
+      responses:
+        '204':
+          description: Provider connection disabled
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -198,6 +261,46 @@ components:
           type: object
           additionalProperties:
             type: string
+    ConnectProviderRequest:
+      type: object
+      additionalProperties: false
+      required: [provider_key, credentials]
+      properties:
+        provider_key:
+          type: string
+          enum: [woovi]
+        priority:
+          type: integer
+          minimum: 0
+          default: 0
+        credentials:
+          type: object
+          minProperties: 1
+          writeOnly: true
+          description: Provider-specific credentials. Woovi requires `app_id`. Values are validated before storage and encrypted at rest.
+          additionalProperties:
+            type: string
+    ProviderConnection:
+      type: object
+      required: [id, provider_key, environment, enabled, credentials_valid, circuit_state, priority]
+      properties:
+        id:
+          type: string
+        provider_key:
+          type: string
+        environment:
+          type: string
+          enum: [test, live]
+        enabled:
+          type: boolean
+        credentials_valid:
+          type: boolean
+        circuit_state:
+          type: string
+          enum: [closed, open, half_open]
+        priority:
+          type: integer
+          minimum: 0
     SetWebhookEndpointRequest:
       type: object
       additionalProperties: false

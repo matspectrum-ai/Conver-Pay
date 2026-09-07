@@ -2,8 +2,10 @@ package fake
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/domain"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
 )
 
@@ -61,7 +63,10 @@ func (a *Adapter) ReconcileCalls() int {
 
 type Registry map[string]provider.Adapter
 
-func (r Registry) Get(key string) (provider.Adapter, bool) {
-	a, ok := r[key]
-	return a, ok
+func (r Registry) Resolve(_ context.Context, connection domain.ProviderConnection) (provider.Adapter, error) {
+	a, ok := r[connection.ProviderKey]
+	if !ok {
+		return nil, fmt.Errorf("fake provider %q not registered", connection.ProviderKey)
+	}
+	return a, nil
 }

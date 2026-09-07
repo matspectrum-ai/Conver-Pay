@@ -17,6 +17,8 @@ import (
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/logging"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/orchestration"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider/woovi"
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/providerconnections"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/routingtelemetry"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/secretbox"
 	storepostgres "github.com/matspectrum-ai/conver-pay/apps/api/internal/store/postgres"
@@ -39,6 +41,7 @@ func main() {
 	var payments httpapi.PaymentService
 	var providerWebhooks httpapi.ProviderWebhookService
 	var merchantWebhooks httpapi.MerchantWebhookService
+	var providerConnections httpapi.ProviderConnectionService
 	var webhookWorker *webhookdelivery.Service
 	var apiKeys authn.Resolver
 	if cfg.DatabaseURL != "" {
@@ -52,10 +55,38 @@ func main() {
 		defer db.Close()
 
 		store := storepostgres.New(db.Pool())
+		providerRegistry := provider.IntegrationRegistry{}
+		if cfg.ProviderCredentialsMasterKey != "" {
+			providerBox, boxErr := secretbox.NewBase64(cfg.ProviderCredentialsMasterKey)
+			if boxErr != nil {
+				logger.Error("invalid provider credentials master key", "error", boxErr)
+				os.Exit(1)
+			}
+			providerClient := &http.Client{Timeout: cfg.ProviderHTTPTimeout}
+			wooviFactory, factoryErr := woovi.NewFactory(woovi.Options{
+				Credentials: store, Cipher: providerBox, HTTPClient: providerClient,
+			})
+			if factoryErr != nil {
+				logger.Error("woovi integration initialization failed", "error", factoryErr)
+				os.Exit(1)
+			}
+			providerRegistry[woovi.Key] = wooviFactory
+			connectionService, serviceErr := providerconnections.New(providerconnections.Options{
+				Store: store, Validator: providerRegistry, Cipher: providerBox,
+			})
+			if serviceErr != nil {
+				logger.Error("provider connection service initialization failed", "error", serviceErr)
+				os.Exit(1)
+			}
+			providerConnections = connectionService
+		} else {
+			logger.Warn("PROVIDER_CREDENTIALS_MASTER_KEY is not configured; real provider integrations are disabled")
+		}
+
 		routingTelemetry := routingtelemetry.New(store, routingtelemetry.Options{})
 		orchestrator := orchestration.New(orchestration.Options{
 			Repository:       store,
-			Providers:        provider.MapRegistry{},
+			Providers:        providerRegistry,
 			RoutingTelemetry: routingTelemetry,
 		})
 		payments = orchestrator
@@ -92,14 +123,15 @@ func main() {
 	}
 
 	server := httpapi.New(httpapi.Options{
-		Addr:             cfg.HTTPAddr,
-		Logger:           logger,
-		Database:         db,
-		Payments:         payments,
-		ProviderWebhooks: providerWebhooks,
-		MerchantWebhooks: merchantWebhooks,
-		APIKeys:          apiKeys,
-		ShutdownTimeout:  cfg.ShutdownTimeout,
+		Addr:                cfg.HTTPAddr,
+		Logger:              logger,
+		Database:            db,
+		Payments:            payments,
+		ProviderWebhooks:    providerWebhooks,
+		MerchantWebhooks:    merchantWebhooks,
+		ProviderConnections: providerConnections,
+		APIKeys:             apiKeys,
+		ShutdownTimeout:     cfg.ShutdownTimeout,
 	})
 
 	if webhookWorker != nil {
