@@ -20,6 +20,7 @@ type Options struct {
 	Database         DatabasePinger
 	Payments         PaymentService
 	ProviderWebhooks ProviderWebhookService
+	MerchantWebhooks MerchantWebhookService
 	APIKeys          authn.Resolver
 	ShutdownTimeout  time.Duration
 }
@@ -68,6 +69,7 @@ func New(opts Options) *http.Server {
 
 	registerPaymentRoutes(mux, opts)
 	registerProviderWebhookRoutes(mux, opts)
+	registerMerchantWebhookRoutes(mux, opts)
 
 	return &http.Server{
 		Addr:              opts.Addr,
