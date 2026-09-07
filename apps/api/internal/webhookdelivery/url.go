@@ -30,6 +30,16 @@ func validateEndpointURL(raw string, allowInsecureLocal bool) (string, error) {
 	if host == "" {
 		return "", invalidEndpoint("url is invalid")
 	}
+
+	if !allowInsecureLocal {
+		if strings.EqualFold(host, "localhost") {
+			return "", invalidEndpoint("localhost is not allowed")
+		}
+		if ip := net.ParseIP(host); ip != nil && !isPublicWebhookIP(ip) {
+			return "", invalidEndpoint("private or non-public IP is not allowed")
+		}
+	}
+
 	if parsed.Scheme == "https" {
 		return parsed.String(), nil
 	}
