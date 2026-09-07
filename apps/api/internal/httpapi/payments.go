@@ -150,19 +150,19 @@ type pixResponse struct {
 }
 
 type paymentResponse struct {
-	ID                 string            `json:"id"`
-	MerchantOrderID    string            `json:"merchant_order_id"`
-	Amount             int64             `json:"amount"`
-	Currency           string            `json:"currency"`
-	Status             domain.PaymentStatus `json:"status"`
-	Pix                *pixResponse      `json:"pix,omitempty"`
-	Recovered          bool              `json:"recovered"`
-	RecoveredAmount    int64             `json:"recovered_amount"`
-	FailureCode        string            `json:"failure_code,omitempty"`
-	Metadata           map[string]string `json:"metadata,omitempty"`
-	CreatedAt          time.Time         `json:"created_at"`
-	UpdatedAt          time.Time         `json:"updated_at"`
-	PaidAt             *time.Time        `json:"paid_at,omitempty"`
+	ID              string               `json:"id"`
+	MerchantOrderID string               `json:"merchant_order_id"`
+	Amount          int64                `json:"amount"`
+	Currency        string               `json:"currency"`
+	Status          domain.PaymentStatus `json:"status"`
+	Pix             *pixResponse         `json:"pix,omitempty"`
+	Recovered       bool                 `json:"recovered"`
+	RecoveredAmount int64                `json:"recovered_amount"`
+	FailureCode     string               `json:"failure_code,omitempty"`
+	Metadata        map[string]string    `json:"metadata,omitempty"`
+	CreatedAt       time.Time            `json:"created_at"`
+	UpdatedAt       time.Time            `json:"updated_at"`
+	PaidAt          *time.Time           `json:"paid_at,omitempty"`
 }
 
 func toPaymentResponse(intent *domain.PaymentIntent) paymentResponse {
