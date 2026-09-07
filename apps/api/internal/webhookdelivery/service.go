@@ -123,11 +123,14 @@ func (s *Service) SetEndpoint(ctx context.Context, workspaceID string, environme
 	endpoint := &Endpoint{
 		ID: s.ids.New("whe"), WorkspaceID: workspaceID, Environment: environment,
 		URL: url, SigningSecretCiphertext: ciphertext, Enabled: true,
-		CreatedAt: now, UpdatedAt: now,
+		ActiveSince: now, CreatedAt: now, UpdatedAt: now,
 	}
 	if existing, err := s.repo.GetWebhookEndpoint(ctx, workspaceID, environment); err == nil {
 		endpoint.ID = existing.ID
 		endpoint.CreatedAt = existing.CreatedAt
+		if existing.Enabled {
+			endpoint.ActiveSince = existing.ActiveSince
+		}
 	} else if !errors.Is(err, domain.ErrNotFound) {
 		return nil, err
 	}
@@ -225,9 +228,6 @@ func classifyDelivery(result SendResult) string {
 			return DeliveryRetry
 		}
 		return DeliveryFailed
-	}
-	if result.ErrorCode != "" {
-		return DeliveryRetry
 	}
 	return DeliveryRetry
 }
