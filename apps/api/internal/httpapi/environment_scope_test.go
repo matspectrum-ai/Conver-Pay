@@ -1,11 +1,11 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
 
-	"github.com/matspectrum-ai/conver-pay/apps/api/internal/authn"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/domain"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/orchestration"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
@@ -41,7 +41,9 @@ func TestPaymentQueriesAreEnvironmentScoped(t *testing.T) {
 		t.Fatalf("create status = %d body=%s", created.Code, created.Body.String())
 	}
 	var response paymentResponse
-	decodeJSONResponse(t, created, &response)
+	if err := json.Unmarshal(created.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
 
 	for _, path := range []string{
 		"/v1/payment_intents/" + response.ID,
@@ -59,11 +61,3 @@ func TestPaymentQueriesAreEnvironmentScoped(t *testing.T) {
 		})
 	}
 }
-
-func decodeJSONResponse(t *testing.T, response interface{ BodyBytes() []byte }, target any) {
-	t.Helper()
-	_ = response
-	_ = target
-}
-
-var _ authn.Resolver = staticResolver{}
