@@ -39,12 +39,12 @@ func TestPostgresWebhookDeliveryLeaseRetryAndEnvironment(t *testing.T) {
 		{
 			ID: "whe_test", WorkspaceID: "ws_1", Environment: domain.EnvironmentTest,
 			URL: "https://test.example/hook", SigningSecretCiphertext: "cipher-test",
-			Enabled: true, CreatedAt: endpointCreated, UpdatedAt: endpointCreated,
+			Enabled: true, ActiveSince: endpointCreated, CreatedAt: endpointCreated, UpdatedAt: endpointCreated,
 		},
 		{
 			ID: "whe_live", WorkspaceID: "ws_1", Environment: domain.EnvironmentLive,
 			URL: "https://live.example/hook", SigningSecretCiphertext: "cipher-live",
-			Enabled: true, CreatedAt: endpointCreated, UpdatedAt: endpointCreated,
+			Enabled: true, ActiveSince: endpointCreated, CreatedAt: endpointCreated, UpdatedAt: endpointCreated,
 		},
 	} {
 		if _, err := store.UpsertWebhookEndpoint(ctx, endpoint); err != nil {
