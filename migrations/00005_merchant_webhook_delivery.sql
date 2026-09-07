@@ -6,6 +6,7 @@ CREATE TABLE conver_pay.merchant_webhook_endpoints (
     url TEXT NOT NULL,
     signing_secret_ciphertext TEXT NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    active_since TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT merchant_webhook_endpoints_scope_unique UNIQUE (workspace_id, environment)
