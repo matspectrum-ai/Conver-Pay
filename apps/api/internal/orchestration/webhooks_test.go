@@ -57,7 +57,7 @@ func TestProviderWebhookMarksPaymentPaidExactlyOnce(t *testing.T) {
 		IDs:        &sequenceIDs{},
 	})
 
-	intent, err := svc.CreatePayment(context.Background(), orchestration.CreatePaymentRequest{
+	_, err := svc.CreatePayment(context.Background(), orchestration.CreatePaymentRequest{
 		WorkspaceID: "ws_1", IdempotencyKey: "idem-1", MerchantOrderID: "order-1",
 		Amount: 5000, Currency: "BRL", Environment: domain.EnvironmentTest,
 	})
