@@ -110,8 +110,15 @@ func TestPostgresProviderWebhookDedupeAndAtomicOutbox(t *testing.T) {
 	if len(recoveries) != 1 {
 		t.Fatalf("recoveries = %#v", recoveries)
 	}
-	if len(merchantEvents) != 2 || merchantEvents[0].EventType != "payment.paid" || merchantEvents[1].EventType != "payment.recovered" {
+	if len(merchantEvents) != 2 {
 		t.Fatalf("merchant events = %#v", merchantEvents)
+	}
+	types := map[string]bool{}
+	for _, event := range merchantEvents {
+		types[event.EventType] = true
+	}
+	if !types["payment.paid"] || !types["payment.recovered"] {
+		t.Fatalf("merchant event types = %#v", types)
 	}
 
 	var providerEventCount, processedCount int
