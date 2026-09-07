@@ -15,8 +15,8 @@ import (
 
 type PaymentService interface {
 	CreatePayment(context.Context, orchestration.CreatePaymentRequest) (*domain.PaymentIntent, error)
-	GetPayment(context.Context, string, string) (*domain.PaymentIntent, error)
-	ListPaymentAttempts(context.Context, string, string) ([]domain.PaymentAttempt, error)
+	GetPayment(context.Context, string, domain.Environment, string) (*domain.PaymentIntent, error)
+	ListPaymentAttempts(context.Context, string, domain.Environment, string) ([]domain.PaymentAttempt, error)
 }
 
 func registerPaymentRoutes(mux *http.ServeMux, opts Options) {
@@ -120,7 +120,7 @@ func handleCreatePayment(service PaymentService) authorizedHandler {
 
 func handleGetPayment(service PaymentService) authorizedHandler {
 	return func(w http.ResponseWriter, r *http.Request, principal authn.Principal) {
-		intent, err := service.GetPayment(r.Context(), principal.WorkspaceID, r.PathValue("id"))
+		intent, err := service.GetPayment(r.Context(), principal.WorkspaceID, principal.Environment, r.PathValue("id"))
 		if err != nil {
 			writePaymentError(w, err)
 			return
@@ -131,7 +131,7 @@ func handleGetPayment(service PaymentService) authorizedHandler {
 
 func handleListAttempts(service PaymentService) authorizedHandler {
 	return func(w http.ResponseWriter, r *http.Request, principal authn.Principal) {
-		attempts, err := service.ListPaymentAttempts(r.Context(), principal.WorkspaceID, r.PathValue("id"))
+		attempts, err := service.ListPaymentAttempts(r.Context(), principal.WorkspaceID, principal.Environment, r.PathValue("id"))
 		if err != nil {
 			writePaymentError(w, err)
 			return
