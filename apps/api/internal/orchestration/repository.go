@@ -27,7 +27,7 @@ type Repository interface {
 	ListRecoveryEvents(context.Context, string) ([]domain.RecoveryEvent, error)
 
 	RecordProviderEvent(context.Context, *domain.ProviderEvent) (bool, error)
-	MarkProviderEventProcessed(context.Context, string, time.Time) error
+	MarkProviderEventProcessed(context.Context, string, string, time.Time) error
 	MarkPaymentPaidWithEvents(context.Context, *domain.PaymentIntent, *domain.RecoveryEvent, []domain.MerchantEvent) error
 	ListMerchantEvents(context.Context, string) ([]domain.MerchantEvent, error)
 }
