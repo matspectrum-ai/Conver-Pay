@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -129,7 +128,6 @@ func isPublicWebhookIP(ip net.IP) bool {
 		return false
 	}
 	if ip4 := ip.To4(); ip4 != nil {
-		// 100.64.0.0/10 carrier-grade NAT and documentation ranges are not valid public webhook targets.
 		if ip4[0] == 100 && ip4[1] >= 64 && ip4[1] <= 127 {
 			return false
 		}
@@ -162,7 +160,3 @@ func VerifySignature(secret []byte, timestamp string, payload []byte, header str
 }
 
 var _ Sender = (*HTTPSender)(nil)
-
-func _compileGuard() {
-	_ = fmt.Sprintf
-}
