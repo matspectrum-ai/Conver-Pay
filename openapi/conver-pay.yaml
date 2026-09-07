@@ -1,8 +1,11 @@
 openapi: 3.1.0
 info:
   title: Conver Pay API
-  version: 0.1.0
-  description: Provider-neutral Pix orchestration API. Conver Pay orchestrates merchant-owned payment providers and does not act as the Pix acquirer.
+  version: 0.2.0
+  description: |
+    Provider-neutral Pix orchestration API. Conver Pay orchestrates merchant-owned payment providers and does not act as the Pix acquirer.
+
+    Merchant webhook deliveries are signed with HMAC-SHA256. Verify `Conver-Pay-Signature` against the exact raw request body using the message `<Conver-Pay-Timestamp>.<raw-body>` and the signing secret configured for the authenticated environment.
 servers:
   - url: https://api.converpay.example
 security:
@@ -89,6 +92,51 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /v1/webhook_endpoint:
+    put:
+      operationId: setWebhookEndpoint
+      summary: Create, rotate, or reactivate the webhook endpoint for the authenticated environment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetWebhookEndpointRequest'
+      responses:
+        '200':
+          description: Active webhook endpoint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    get:
+      operationId: getWebhookEndpoint
+      summary: Get the webhook endpoint for the authenticated environment
+      responses:
+        '200':
+          description: Webhook endpoint. The signing secret is never returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: disableWebhookEndpoint
+      summary: Disable webhook delivery for the authenticated environment
+      responses:
+        '204':
+          description: Webhook endpoint disabled
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     bearerAuth:
@@ -124,7 +172,7 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     NotFound:
-      description: Resource does not exist in the authenticated workspace
+      description: Resource does not exist in the authenticated workspace and environment
       content:
         application/json:
           schema:
@@ -150,6 +198,41 @@ components:
           type: object
           additionalProperties:
             type: string
+    SetWebhookEndpointRequest:
+      type: object
+      additionalProperties: false
+      required: [url, signing_secret]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: HTTPS endpoint. Plain HTTP is accepted only for loopback development targets.
+        signing_secret:
+          type: string
+          minLength: 32
+          maxLength: 512
+          writeOnly: true
+          description: Secret used to sign outbound webhook requests. It is encrypted at rest and never returned.
+    WebhookEndpoint:
+      type: object
+      required: [id, url, environment, enabled, created_at, updated_at]
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+          format: uri
+        environment:
+          type: string
+          enum: [test, live]
+        enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     Pix:
       type: object
       required: [copy_paste, expires_at]
