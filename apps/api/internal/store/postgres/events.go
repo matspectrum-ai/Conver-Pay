@@ -49,9 +49,12 @@ func (s *Store) RecordProviderEvent(ctx context.Context, event *domain.ProviderE
 	return result.RowsAffected() == 1, nil
 }
 
-func (s *Store) MarkProviderEventProcessed(ctx context.Context, id string, processedAt time.Time) error {
+func (s *Store) MarkProviderEventProcessed(ctx context.Context, providerConnectionID, externalEventID string, processedAt time.Time) error {
 	result, err := s.pool.Exec(ctx, `
-		UPDATE conver_pay.provider_events SET processed_at=$2 WHERE id=$1`, id, processedAt)
+		UPDATE conver_pay.provider_events
+		SET processed_at=$3
+		WHERE provider_connection_id=$1 AND external_event_id=$2`,
+		providerConnectionID, externalEventID, processedAt)
 	if err != nil {
 		return fmt.Errorf("mark provider event processed: %w", err)
 	}
