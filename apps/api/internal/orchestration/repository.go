@@ -10,6 +10,7 @@ import (
 type Repository interface {
 	GetOrCreatePayment(context.Context, *domain.PaymentIntent) (*domain.PaymentIntent, bool, error)
 	GetPayment(context.Context, string) (*domain.PaymentIntent, error)
+	GetPaymentEnvironment(context.Context, string) (domain.Environment, error)
 	SavePayment(context.Context, *domain.PaymentIntent) error
 
 	ListProviderConnections(context.Context, string) ([]domain.ProviderConnection, error)
