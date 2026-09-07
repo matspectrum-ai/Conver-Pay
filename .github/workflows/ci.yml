@@ -23,9 +23,12 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.mod
 
-      - name: Download dependencies
-        run: go mod download
+      - name: Prepare modules
+        run: |
+          go mod tidy
+          go mod verify
 
       - name: Format check
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
