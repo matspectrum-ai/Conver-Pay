@@ -1,27 +1,34 @@
 package webhookdelivery
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
 	"strings"
 )
 
+var ErrInvalidEndpoint = errors.New("invalid webhook endpoint")
+
+func invalidEndpoint(reason string) error {
+	return fmt.Errorf("%w: %s", ErrInvalidEndpoint, reason)
+}
+
 func validateEndpointURL(raw string, allowInsecureLocal bool) (string, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return "", fmt.Errorf("webhook url is required")
+		return "", invalidEndpoint("url is required")
 	}
 	parsed, err := url.Parse(raw)
 	if err != nil {
-		return "", fmt.Errorf("invalid webhook url")
+		return "", invalidEndpoint("url is invalid")
 	}
 	if parsed.Host == "" || parsed.User != nil || parsed.Fragment != "" {
-		return "", fmt.Errorf("invalid webhook url")
+		return "", invalidEndpoint("url is invalid")
 	}
 	host := parsed.Hostname()
 	if host == "" {
-		return "", fmt.Errorf("invalid webhook url")
+		return "", invalidEndpoint("url is invalid")
 	}
 	if parsed.Scheme == "https" {
 		return parsed.String(), nil
@@ -29,7 +36,7 @@ func validateEndpointURL(raw string, allowInsecureLocal bool) (string, error) {
 	if parsed.Scheme == "http" && allowInsecureLocal && isLocalHostname(host) {
 		return parsed.String(), nil
 	}
-	return "", fmt.Errorf("webhook url must use https")
+	return "", invalidEndpoint("url must use https")
 }
 
 func isLocalHostname(host string) bool {
