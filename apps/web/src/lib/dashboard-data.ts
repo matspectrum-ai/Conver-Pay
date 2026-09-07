@@ -70,7 +70,7 @@ export function getPaymentInspectorDetail(payment: Payment): PaymentInspectorDet
       timeline: [
         { time: "17:18:42.117", actor: "Conver", label: "Payment intent created", detail: "Idempotency key order_19280" },
         { time: "17:18:42.184", actor: "BlackCat", label: "503 SERVICE_UNAVAILABLE", tone: "danger", detail: "Hard provider failure; no charge created" },
-        { time: "17:18:42.226", actor: "Conver", label: "Fallback triggered", tone: "warning", detail: "health-v1 selected Woivi · score 0.94" },
+        { time: "17:18:42.226", actor: "Conver", label: "Fallback triggered", tone: "warning", detail: "health-v1 selected Woovi · score 0.94" },
         { time: "17:18:42.401", actor: "Woovi", label: "PIX_CREATED", detail: "QR available in 201 ms" },
         { time: "17:18:55.819", actor: "Pix", label: `PAID · ${payment.amount}`, tone: "success", detail: "Recovery evidence sealed" },
       ],
