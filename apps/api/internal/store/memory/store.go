@@ -84,7 +84,7 @@ func (s *Store) ListProviderConnections(_ context.Context, workspaceID string) (
 	return append([]domain.ProviderConnection(nil), s.providers[workspaceID]...), nil
 }
 
-func (s *Store) AddAttempt(_ context.Context, attempt *domain.PaymentAttempt) error {
+func (s *Store) AddAttemptWithRoutingDecision(_ context.Context, attempt *domain.PaymentAttempt, decision *domain.RoutingDecision) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, exists := s.attempts[attempt.ID]; exists {
@@ -92,6 +92,10 @@ func (s *Store) AddAttempt(_ context.Context, attempt *domain.PaymentAttempt) er
 	}
 	s.attempts[attempt.ID] = cloneAttempt(attempt)
 	s.attemptsByPay[attempt.PaymentIntentID] = append(s.attemptsByPay[attempt.PaymentIntentID], attempt.ID)
+	copy := *decision
+	copy.Candidates = append([]domain.CandidateSnapshot(nil), decision.Candidates...)
+	copy.ReasonCodes = append([]string(nil), decision.ReasonCodes...)
+	s.decisionsByPay[decision.PaymentIntentID] = append(s.decisionsByPay[decision.PaymentIntentID], copy)
 	return nil
 }
 
@@ -125,16 +129,6 @@ func (s *Store) ListAttempts(_ context.Context, paymentID string) ([]domain.Paym
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Sequence < out[j].Sequence })
 	return out, nil
-}
-
-func (s *Store) AddRoutingDecision(_ context.Context, decision *domain.RoutingDecision) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	copy := *decision
-	copy.Candidates = append([]domain.CandidateSnapshot(nil), decision.Candidates...)
-	copy.ReasonCodes = append([]string(nil), decision.ReasonCodes...)
-	s.decisionsByPay[decision.PaymentIntentID] = append(s.decisionsByPay[decision.PaymentIntentID], copy)
-	return nil
 }
 
 func (s *Store) ListRoutingDecisions(_ context.Context, paymentID string) ([]domain.RoutingDecision, error) {

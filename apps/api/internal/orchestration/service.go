@@ -168,10 +168,7 @@ func (s *Service) executeRouting(ctx context.Context, intent *domain.PaymentInte
 			ReasonCodes:                  []string{"priority"},
 			CreatedAt:                    now,
 		}
-		if err := s.repo.AddRoutingDecision(ctx, decision); err != nil {
-			return nil, err
-		}
-		if err := s.repo.AddAttempt(ctx, attempt); err != nil {
+		if err := s.repo.AddAttemptWithRoutingDecision(ctx, attempt, decision); err != nil {
 			return nil, err
 		}
 		intent.ActiveAttemptID = attempt.ID

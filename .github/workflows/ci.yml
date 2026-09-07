@@ -12,6 +12,22 @@ jobs:
   api:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: conver_pay_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d conver_pay_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/conver_pay_test?sslmode=disable
     defaults:
       run:
         working-directory: apps/api
@@ -29,6 +45,9 @@ jobs:
         run: |
           go mod tidy
           go mod verify
+
+      - name: Migrate test database
+        run: go run github.com/pressly/goose/v3/cmd/goose@v3.27.3 -dir ../../migrations postgres "$DATABASE_URL" up
 
       - name: Format check
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
