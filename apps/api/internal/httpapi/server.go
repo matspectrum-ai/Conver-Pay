@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/authn"
 )
 
 type DatabasePinger interface {
@@ -16,6 +18,8 @@ type Options struct {
 	Addr            string
 	Logger          *slog.Logger
 	Database        DatabasePinger
+	Payments        PaymentService
+	APIKeys         authn.Resolver
 	ShutdownTimeout time.Duration
 }
 
@@ -60,6 +64,8 @@ func New(opts Options) *http.Server {
 			"database": "ok",
 		})
 	})
+
+	registerPaymentRoutes(mux, opts)
 
 	return &http.Server{
 		Addr:              opts.Addr,
