@@ -196,18 +196,18 @@ func (s *Store) RecordProviderEvent(_ context.Context, event *domain.ProviderEve
 	return true, nil
 }
 
-func (s *Store) MarkProviderEventProcessed(_ context.Context, id string, processedAt time.Time) error {
+func (s *Store) MarkProviderEventProcessed(_ context.Context, providerConnectionID, externalEventID string, processedAt time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for key, event := range s.providerEvents {
-		if event.ID == id {
-			t := processedAt
-			event.ProcessedAt = &t
-			s.providerEvents[key] = event
-			return nil
-		}
+	key := providerConnectionID + "\x00" + externalEventID
+	event, ok := s.providerEvents[key]
+	if !ok {
+		return domain.ErrNotFound
 	}
-	return domain.ErrNotFound
+	t := processedAt
+	event.ProcessedAt = &t
+	s.providerEvents[key] = event
+	return nil
 }
 
 func (s *Store) MarkPaymentPaidWithEvents(_ context.Context, intent *domain.PaymentIntent, recovery *domain.RecoveryEvent, events []domain.MerchantEvent) error {
