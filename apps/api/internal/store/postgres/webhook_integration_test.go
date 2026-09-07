@@ -3,6 +3,7 @@ package postgres_test
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -128,7 +129,7 @@ func TestPostgresProviderWebhookDedupeAndAtomicOutbox(t *testing.T) {
 
 func testDatabaseURL(t *testing.T) string {
 	t.Helper()
-	url := getenvDatabaseURL()
+	url := os.Getenv("DATABASE_URL")
 	if url == "" {
 		t.Skip("DATABASE_URL not configured")
 	}
