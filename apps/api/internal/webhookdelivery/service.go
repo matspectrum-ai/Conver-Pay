@@ -229,5 +229,10 @@ func classifyDelivery(result SendResult) string {
 		}
 		return DeliveryFailed
 	}
-	return DeliveryRetry
+	switch result.ErrorCode {
+	case "target_not_public", "invalid_url":
+		return DeliveryFailed
+	default:
+		return DeliveryRetry
+	}
 }
