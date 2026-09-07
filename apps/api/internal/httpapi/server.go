@@ -15,14 +15,15 @@ type DatabasePinger interface {
 }
 
 type Options struct {
-	Addr             string
-	Logger           *slog.Logger
-	Database         DatabasePinger
-	Payments         PaymentService
-	ProviderWebhooks ProviderWebhookService
-	MerchantWebhooks MerchantWebhookService
-	APIKeys          authn.Resolver
-	ShutdownTimeout  time.Duration
+	Addr                string
+	Logger              *slog.Logger
+	Database            DatabasePinger
+	Payments            PaymentService
+	ProviderWebhooks    ProviderWebhookService
+	MerchantWebhooks    MerchantWebhookService
+	ProviderConnections ProviderConnectionService
+	APIKeys             authn.Resolver
+	ShutdownTimeout     time.Duration
 }
 
 func New(opts Options) *http.Server {
@@ -70,6 +71,7 @@ func New(opts Options) *http.Server {
 	registerPaymentRoutes(mux, opts)
 	registerProviderWebhookRoutes(mux, opts)
 	registerMerchantWebhookRoutes(mux, opts)
+	registerProviderConnectionRoutes(mux, opts)
 
 	return &http.Server{
 		Addr:              opts.Addr,

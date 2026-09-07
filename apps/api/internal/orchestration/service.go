@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/domain"
@@ -196,8 +195,8 @@ func (s *Service) executeRouting(ctx context.Context, intent *domain.PaymentInte
 			return nil, err
 		}
 
-		adapter, ok := s.providers.Get(route.Selected.ProviderKey)
-		if !ok {
+		adapter, resolveErr := s.providers.Resolve(ctx, *route.Selected)
+		if resolveErr != nil {
 			attempt.Status = domain.AttemptStatusFailedTerminal
 			attempt.FailureCode = "adapter_not_registered"
 			attempt.UpdatedAt = s.clock.Now()
@@ -206,7 +205,7 @@ func (s *Service) executeRouting(ctx context.Context, intent *domain.PaymentInte
 			intent.FailureCode = attempt.FailureCode
 			intent.UpdatedAt = s.clock.Now()
 			_ = s.repo.SavePayment(ctx, intent)
-			return intent, fmt.Errorf("provider adapter %q not registered", route.Selected.ProviderKey)
+			return intent, resolveErr
 		}
 
 		attempt.Status = domain.AttemptStatusRequesting
@@ -324,9 +323,9 @@ func (s *Service) ReconcilePayment(ctx context.Context, paymentID string, env do
 	if conn == nil {
 		return nil, domain.ErrNotFound
 	}
-	adapter, ok := s.providers.Get(conn.ProviderKey)
-	if !ok {
-		return nil, fmt.Errorf("provider adapter %q not registered", conn.ProviderKey)
+	adapter, err := s.providers.Resolve(ctx, *conn)
+	if err != nil {
+		return nil, err
 	}
 
 	outcome := adapter.Reconcile(ctx, provider.ReconcileRequest{

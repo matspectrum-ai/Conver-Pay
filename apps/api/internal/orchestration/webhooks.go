@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/domain"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
@@ -16,9 +15,9 @@ func (s *Service) ProcessProviderWebhook(ctx context.Context, providerConnection
 		return nil, err
 	}
 
-	adapter, ok := s.providers.Get(connection.ProviderKey)
-	if !ok {
-		return nil, fmt.Errorf("provider adapter %q not registered", connection.ProviderKey)
+	adapter, err := s.providers.Resolve(ctx, *connection)
+	if err != nil {
+		return nil, err
 	}
 	webhookAdapter, ok := adapter.(provider.WebhookAdapter)
 	if !ok {
