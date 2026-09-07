@@ -35,21 +35,27 @@ func (randomIDGenerator) New(prefix string) string {
 	return prefix + "_" + hex.EncodeToString(b[:])
 }
 
+type RoutingTelemetry interface {
+	Refresh(context.Context, []domain.ProviderConnection, domain.Environment, time.Time) (map[string]domain.ProviderHealthSnapshot, error)
+}
+
 type Service struct {
 	repo        Repository
 	providers   provider.Registry
 	router      Router
+	telemetry   RoutingTelemetry
 	clock       Clock
 	ids         IDGenerator
 	maxAttempts int
 }
 
 type Options struct {
-	Repository  Repository
-	Providers   provider.Registry
-	Clock       Clock
-	IDs         IDGenerator
-	MaxAttempts int
+	Repository       Repository
+	Providers        provider.Registry
+	RoutingTelemetry RoutingTelemetry
+	Clock            Clock
+	IDs              IDGenerator
+	MaxAttempts      int
 }
 
 func New(opts Options) *Service {
@@ -69,6 +75,7 @@ func New(opts Options) *Service {
 		repo:        opts.Repository,
 		providers:   opts.Providers,
 		router:      Router{},
+		telemetry:   opts.RoutingTelemetry,
 		clock:       clock,
 		ids:         ids,
 		maxAttempts: maxAttempts,
@@ -127,6 +134,17 @@ func (s *Service) executeRouting(ctx context.Context, intent *domain.PaymentInte
 	if err != nil {
 		return nil, err
 	}
+	var health map[string]domain.ProviderHealthSnapshot
+	if s.telemetry != nil {
+		health, err = s.telemetry.Refresh(ctx, connections, env, s.clock.Now())
+		if err != nil {
+			return nil, err
+		}
+		connections, err = s.repo.ListProviderConnections(ctx, intent.WorkspaceID)
+		if err != nil {
+			return nil, err
+		}
+	}
 	attempts, err := s.repo.ListAttempts(ctx, intent.ID)
 	if err != nil {
 		return nil, err
@@ -137,7 +155,7 @@ func (s *Service) executeRouting(ctx context.Context, intent *domain.PaymentInte
 	}
 
 	for len(attempts) < s.maxAttempts {
-		route := s.router.Select(connections, env, excluded)
+		route := s.router.Select(connections, env, excluded, health)
 		if route.Selected == nil {
 			intent.Status = domain.PaymentStatusFailed
 			intent.FailureCode = "no_eligible_provider"
@@ -165,7 +183,8 @@ func (s *Service) executeRouting(ctx context.Context, intent *domain.PaymentInte
 			AttemptID:                    attempt.ID,
 			SelectedProviderConnectionID: route.Selected.ID,
 			Candidates:                   route.Candidates,
-			ReasonCodes:                  []string{"priority"},
+			ReasonCodes:                  route.ReasonCodes,
+			ScoreVersion:                 route.ScoreVersion,
 			CreatedAt:                    now,
 		}
 		if err := s.repo.AddAttemptWithRoutingDecision(ctx, attempt, decision); err != nil {

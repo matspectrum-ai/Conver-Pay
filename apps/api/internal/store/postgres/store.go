@@ -118,7 +118,7 @@ func (s *Store) SavePayment(ctx context.Context, intent *domain.PaymentIntent) e
 func (s *Store) ListProviderConnections(ctx context.Context, workspaceID string) ([]domain.ProviderConnection, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, workspace_id, provider_key, environment, enabled,
-			credentials_valid, circuit_state, priority
+			credentials_valid, circuit_state, circuit_opened_at, priority
 		FROM conver_pay.provider_connections
 		WHERE workspace_id = $1
 		ORDER BY priority, id`, workspaceID)
@@ -131,7 +131,7 @@ func (s *Store) ListProviderConnections(ctx context.Context, workspaceID string)
 	for rows.Next() {
 		var conn domain.ProviderConnection
 		if err := rows.Scan(&conn.ID, &conn.WorkspaceID, &conn.ProviderKey, &conn.Environment,
-			&conn.Enabled, &conn.CredentialsValid, &conn.Circuit, &conn.Priority); err != nil {
+			&conn.Enabled, &conn.CredentialsValid, &conn.Circuit, &conn.CircuitOpenedAt, &conn.Priority); err != nil {
 			return nil, fmt.Errorf("scan provider connection: %w", err)
 		}
 		result = append(result, conn)
@@ -178,10 +178,10 @@ func (s *Store) AddAttemptWithRoutingDecision(ctx context.Context, attempt *doma
 	_, err = tx.Exec(ctx, `
 		INSERT INTO conver_pay.routing_decisions (
 			id, payment_intent_id, attempt_id, selected_provider_connection_id,
-			candidate_snapshot, reason_codes, created_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+			candidate_snapshot, reason_codes, score_version, created_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 		decision.ID, decision.PaymentIntentID, decision.AttemptID,
-		decision.SelectedProviderConnectionID, candidates, reasons, decision.CreatedAt,
+		decision.SelectedProviderConnectionID, candidates, reasons, decision.ScoreVersion, decision.CreatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert routing decision: %w", err)
@@ -251,7 +251,7 @@ func (s *Store) ListAttempts(ctx context.Context, paymentID string) ([]domain.Pa
 func (s *Store) ListRoutingDecisions(ctx context.Context, paymentID string) ([]domain.RoutingDecision, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, payment_intent_id, attempt_id, selected_provider_connection_id,
-			candidate_snapshot, reason_codes, created_at
+			candidate_snapshot, reason_codes, score_version, created_at
 		FROM conver_pay.routing_decisions
 		WHERE payment_intent_id=$1 ORDER BY created_at, id`, paymentID)
 	if err != nil {
@@ -264,7 +264,7 @@ func (s *Store) ListRoutingDecisions(ctx context.Context, paymentID string) ([]d
 		var d domain.RoutingDecision
 		var candidates, reasons []byte
 		if err := rows.Scan(&d.ID, &d.PaymentIntentID, &d.AttemptID,
-			&d.SelectedProviderConnectionID, &candidates, &reasons, &d.CreatedAt); err != nil {
+			&d.SelectedProviderConnectionID, &candidates, &reasons, &d.ScoreVersion, &d.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan routing decision: %w", err)
 		}
 		if err := json.Unmarshal(candidates, &d.Candidates); err != nil {

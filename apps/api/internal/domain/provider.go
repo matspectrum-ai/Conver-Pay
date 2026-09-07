@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type Environment string
 
 const (
@@ -10,8 +12,9 @@ const (
 type CircuitState string
 
 const (
-	CircuitClosed CircuitState = "closed"
-	CircuitOpen   CircuitState = "open"
+	CircuitClosed   CircuitState = "closed"
+	CircuitOpen     CircuitState = "open"
+	CircuitHalfOpen CircuitState = "half_open"
 )
 
 type ProviderConnection struct {
@@ -22,5 +25,6 @@ type ProviderConnection struct {
 	Enabled          bool
 	CredentialsValid bool
 	Circuit          CircuitState
+	CircuitOpenedAt  *time.Time
 	Priority         int
 }

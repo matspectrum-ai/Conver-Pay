@@ -8,6 +8,13 @@ type CandidateSnapshot struct {
 	Priority             int
 	Eligible             bool
 	ExclusionReason      string
+	Score                float64
+	ScoreVersion         string
+	SampleCount          int
+	QRSuccessRate        float64
+	ErrorRate            float64
+	TimeoutRate          float64
+	LatencyP95MS         float64
 }
 
 type RoutingDecision struct {
@@ -17,5 +24,6 @@ type RoutingDecision struct {
 	SelectedProviderConnectionID string
 	Candidates                   []CandidateSnapshot
 	ReasonCodes                  []string
+	ScoreVersion                 string
 	CreatedAt                    time.Time
 }
