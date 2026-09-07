@@ -1,176 +1,309 @@
 # Conver Pay — Design System
 
-Status: Draft v0.1
+Status: Draft v0.2
 
 ## 1. Product character
 
-Conver Pay is a B2B payment orchestration and observability platform. It is not a consumer wallet, bank account, payment gateway, acquirer, or checkout product.
+Conver Pay is a payment orchestration platform. It is not a consumer wallet, bank, payment gateway, acquirer, or checkout product.
+
+The product should feel like a new control layer for payments: fast, intelligent, technical, alive, and trustworthy.
 
 The interface must communicate:
 
-- operational control;
-- reliability;
+- orchestration in real time;
+- revenue protection;
+- speed;
 - observability;
 - technical precision;
-- revenue impact;
-- fast incident diagnosis.
+- confidence under failure;
+- operational control.
 
-The UI must not look like a consumer fintech or a generic SaaS admin template.
+The UI must not look like a legacy financial backoffice, a generic admin template, or a consumer banking clone.
 
 ## 2. Reference stack
 
-### Primary visual reference — Modern Treasury
+Conver Pay does not have a single clone target. Its visual language is composed from modern product references while its domain behavior comes from payment infrastructure products.
+
+### Primary visual language — Linear
 
 Use as the main reference for:
 
-- information density;
-- B2B financial operations dashboard;
-- navigation hierarchy;
-- transaction/payment detail pages;
-- data tables;
-- filters;
-- operational states;
-- drill-down workflows;
-- high-signal dashboards.
+- calm high-density interfaces;
+- strong hierarchy with low visual noise;
+- compact navigation;
+- dark surfaces;
+- command-driven interaction;
+- keyboard-first behavior;
+- predictable headers and view controls;
+- subtle motion and transitions;
+- crisp icons and typography.
 
-### Functional reference — Primer
-
-Use as the main reference for:
-
-- payment orchestration;
-- provider integrations;
-- observability;
-- payment timelines;
-- routing and fallback visualization;
-- provider performance comparison;
-- transaction lifecycle inspection.
-
-### Developer experience reference — Stripe
+### Surface and motion reference — Raycast
 
 Use as a reference for:
 
+- premium dark UI;
+- layered depth;
+- tasteful translucent/elevated surfaces;
+- command palette behavior;
+- responsive micro-interactions;
+- interface scale and rhythm;
+- motion that reinforces state rather than decorating it.
+
+### Data workspace reference — Attio
+
+Use as a reference for:
+
+- flexible split views;
+- resizable panels;
+- dense record inspection;
+- contextual sidebars;
+- activity timelines;
+- powerful filters;
+- inline editing without losing context.
+
+### Payment orchestration reference — Primer
+
+Use as the domain reference for:
+
+- provider integrations;
+- routing and fallback concepts;
+- payment attempts;
+- observability;
+- provider performance;
+- payment lifecycle inspection.
+
+### Developer experience reference — Stripe / Vercel
+
+Use as references for:
+
 - API keys;
 - webhook configuration;
-- developer settings;
-- API documentation;
-- request/response inspection;
-- test/live environment separation;
-- technical copy.
+- API logs;
+- environments;
+- request inspection;
+- deployment-like operational confidence;
+- developer-focused copy and information hierarchy.
 
-These are references, not clone targets. Conver Pay must have its own visual identity and domain model.
+These products are references, not clone targets. Conver Pay must be immediately recognizable as Conver Pay.
 
-## 3. Visual direction
+## 3. Visual thesis — Payment Operations Cockpit
 
-### Base
+The authenticated product should feel less like a dashboard and more like an operational cockpit.
 
-- Light-first operational interface.
-- Dense but readable information layout.
-- Neutral canvas with high-contrast typography.
-- Dark sidebar/navigation may be used if it improves hierarchy.
-- Minimal decoration.
-- No glassmorphism.
-- No large gradients as primary UI treatment.
-- No oversized marketing-style cards inside the product dashboard.
-- No excessive rounded corners.
-- No decorative 3D illustrations in operational screens.
+The user should perceive that money is moving through a live network and that Conver Pay is continuously making routing decisions to protect conversion.
 
-### Color semantics
+The visual system should combine:
 
-Brand accent should be indigo/cobalt rather than green.
+- near-black / graphite foundation;
+- high-contrast content surfaces;
+- one distinctive electric brand accent;
+- semantic colors used sparingly;
+- thin borders and subtle elevation;
+- compact information density;
+- real-time state changes;
+- high-quality charts and topology views;
+- minimal but deliberate depth/translucency.
 
-Reason: green is operationally valuable and must remain semantically available for successful payments, healthy providers, and recovered revenue.
+Avoid visual noise. Modern does not mean decorative.
 
-Suggested initial semantic roles:
+## 4. Theme
 
-- Brand / primary action: indigo-cobalt.
-- Success / healthy / recovered: emerald-green.
+### Default authenticated theme
+
+Dark-first.
+
+Rationale: the product is operational infrastructure and should read as a high-performance control surface rather than an accounting portal.
+
+A light theme may exist, but the canonical product identity is dark.
+
+### Surface hierarchy
+
+- Canvas: near-black.
+- Navigation: slightly differentiated graphite.
+- Primary surface: elevated dark neutral.
+- Secondary surface: subtle translucent or tonal layer.
+- Hover/focus surface: controlled luminance increase.
+- Borders: low-contrast by default, stronger on focus/selection.
+
+Translucency may be used selectively for command surfaces, floating inspectors, overlays, and real-time control layers. Do not apply glass effects indiscriminately to every card.
+
+## 5. Brand color hypothesis
+
+The primary brand accent should not be generic fintech blue and should not consume green, which is needed for payment success and recovery semantics.
+
+Working direction:
+
+- Brand: electric violet / ultraviolet.
+- Secondary signal: cold cyan.
+- Success / recovered / healthy: emerald.
 - Warning / degraded: amber.
 - Failure / unavailable: red.
-- Unknown / pending: slate-gray.
-- Informational: blue.
+- Pending / unknown: slate.
 
-Exact color tokens will be finalized after logo/brand exploration.
+The exact tokens will be fixed during brand exploration.
 
-### Typography
+The accent may appear as a restrained glow only in high-value contexts such as the active routing path, selected provider, command focus, or key recovery moment.
 
-- Sans-serif optimized for dashboards and tabular data.
-- Strong numeric legibility.
-- Tabular numerals for money, latency, rates, timestamps and IDs.
-- Compact type scale.
-- Avoid excessively large headings inside authenticated application screens.
+No rainbow gradients. No neon overload.
 
-## 4. Core product navigation
+## 6. Typography
 
-Initial authenticated navigation:
+The typography must feel engineered, not editorial.
 
-1. Overview
-2. Payments
-3. Recoveries
-4. Providers
-5. Routing
-6. Observability
-7. Webhooks
-8. Developers
-9. Organizations
-10. Settings
+Requirements:
 
-The navigation must reflect jobs-to-be-done, not database tables.
+- compact sans-serif optimized for interfaces;
+- excellent numeric legibility;
+- tabular numerals for currency, latency, rates and timestamps;
+- monospace for IDs, API keys, request IDs, webhook signatures and technical payloads;
+- compact type scale inside the app;
+- strong hierarchy created primarily by weight, contrast and spacing rather than oversized headings.
 
-## 5. Overview dashboard
+## 7. Product shell
 
-The first screen must answer, within seconds:
+The application shell should be persistent and highly responsive.
 
-- Is payment orchestration healthy right now?
-- How much volume is passing through Conver Pay?
-- How much revenue did Conver Pay recover?
-- Which provider is performing best?
-- Is any provider degraded?
-- Are payment creation latency or failure rates increasing?
+Recommended structure:
 
-Primary metrics:
+- compact left navigation;
+- global command/search trigger;
+- workspace / organization switcher;
+- environment selector (`LIVE` / `TEST`);
+- real-time system health indicator;
+- page-level command bar;
+- main content area with optional inspector/sidebar.
 
-- Total payment volume
-- Paid volume
-- Payment conversion rate
-- QR creation success rate
-- Median / p95 QR creation latency
+The shell should support collapsed navigation and keyboard-driven navigation.
+
+## 8. Command palette
+
+A command palette is a first-class interaction, not a novelty.
+
+Example actions:
+
+- Go to payment `pi_...`
+- Search merchant order
+- Open provider BlackCat
+- Disable provider
+- Change routing mode
+- Replay webhook
+- Copy API request
+- Open recovery
+- Switch organization
+- Switch environment
+
+Power users should be able to move through the product without navigating several menus.
+
+## 9. Overview — live orchestration surface
+
+The Overview should not be a wall of KPI cards.
+
+It should answer immediately:
+
+- Is routing healthy now?
+- What is happening to conversion now?
+- Which provider is winning traffic?
+- Is a provider degrading?
+- How much revenue has Conver Pay recovered?
+- Are failovers happening abnormally often?
+
+Recommended composition:
+
+### Top signal bar
+
+A narrow live status layer:
+
+`System Healthy · 4 providers online · p95 QR 284 ms · 2 active incidents`
+
+### Core performance
+
+Use a restrained metric strip for:
+
+- Payment volume
+- Conversion
+- QR success
 - Recovered revenue
-- Recovered payments
-- Failovers executed
-- Provider availability
+- Failovers
 
-High-priority widgets:
+### Routing topology
 
-- Revenue recovered by Conver Pay
-- Conversion over time
-- Provider performance comparison
-- Provider health
-- Recent recoveries
-- Recent payment failures
-- Routing distribution
+A distinctive live visualization showing traffic flowing from Conver Pay to active providers.
 
-## 6. Recovered Revenue as a first-class concept
+The topology must show real data, not decorative animation.
 
-Recovered Revenue is a core product differentiator and must be visible without becoming visually gimmicky.
+Example concepts:
 
-A payment may be presented as recovered only when there is auditable evidence that:
+- traffic share;
+- current route priority;
+- provider health;
+- live latency;
+- active degradation;
+- failover paths.
+
+### Recovery feed
+
+A live feed of verified recoveries:
+
+`R$ 197 recovered · BlackCat → Provider B · timeout · 18s ago`
+
+Each event opens the complete evidence timeline.
+
+## 10. Routing topology as a signature UI
+
+Routing is the product's core capability and should have a visual representation unique to Conver Pay.
+
+The topology may visually express:
+
+```text
+Checkout traffic
+      ↓
+  Conver Pay
+   ╱   │   ╲
+  ╱    │    ╲
+ A     B     C
+72%   18%   10%
+```
+
+But the production UI should use modern nodes, live health rings, traffic paths, latency labels and failover events.
+
+Rules:
+
+- no fake packet animations;
+- no meaningless particle effects;
+- route animation only when it communicates a real state transition;
+- all visual states must map to actual telemetry;
+- clicking a node reveals the provider inspector;
+- clicking a path reveals the routing decision and sample payments.
+
+This topology is intended to become one of Conver Pay's recognizable product signatures.
+
+## 11. Recovered Revenue as a first-class concept
+
+Recovered Revenue is a core product differentiator.
+
+A payment may only be labeled recovered when there is auditable evidence that:
 
 1. a previous provider attempt failed or met an explicit safe-fallback condition;
 2. Conver Pay executed a fallback;
-3. a subsequent attempt successfully created a usable payment;
+3. a subsequent attempt successfully produced a usable Pix payment;
 4. that payment was confirmed as paid.
 
-Example UI event:
+Recovery UI should feel consequential but not gamified.
 
-> R$ 50,00 recovered by Conver Pay
-> BlackCat → Provider B
-> Trigger: provider unavailable
+Example:
 
-Recovery cards/events should expose evidence and link to the complete payment timeline.
+`R$ 50,00 recovered by Conver Pay`
 
-## 7. Payment list
+Supporting evidence:
 
-Use a dense operational table rather than large cards.
+`BlackCat → Provider B`
+`Trigger: provider unavailable`
+`Fallback latency: 214 ms`
+
+## 12. Payments view
+
+Use an ultra-responsive operational table/list.
 
 Suggested columns:
 
@@ -178,222 +311,231 @@ Suggested columns:
 - Merchant order ID
 - Amount
 - Status
-- Selected provider
+- Route
 - Attempts
 - Recovered
 - QR latency
 - Created at
 
-Support:
+Required behavior:
 
-- global search;
+- instant search;
+- keyboard selection;
 - advanced filters;
-- date ranges;
-- provider filter;
-- status filter;
-- recovered/not-recovered filter;
-- latency filter;
-- failure reason filter.
+- saved views;
+- column configuration;
+- density toggle;
+- sticky headers;
+- multi-select actions where safe;
+- quick inspector without leaving the list.
 
-## 8. Payment detail
+Opening a payment should be possible either as a side inspector or a full forensic page.
 
-The payment detail is one of the most important screens.
+## 13. Payment forensic view
 
-Structure:
+The payment detail is one of the flagship screens.
 
-### Summary
+Use a split-view inspired workflow:
 
-- amount;
-- current status;
-- merchant order ID;
-- payment ID;
-- selected provider;
-- recovered flag;
-- creation and payment timestamps.
+### Main timeline
 
-### Attempt timeline
-
-Visualize each orchestration attempt in order.
+Chronological orchestration lifecycle.
 
 Example:
 
-Attempt #1 — BlackCat
-- request started;
-- timeout threshold reached;
-- reconciliation/verification result;
-- fallback triggered.
+`01:42:12.108  ROUTE_SELECTED     BlackCat`
+`01:42:12.903  SLA_EXCEEDED       795 ms`
+`01:42:12.918  FALLBACK_STARTED   Provider B`
+`01:42:13.191  QR_CREATED         273 ms`
+`01:44:51.227  WEBHOOK_RECEIVED`
+`01:44:51.231  PAYMENT_PAID`
 
-Attempt #2 — Provider B
-- request started;
-- QR created;
-- webhook received;
-- payment confirmed.
+### Inspector panel
 
-Every important state change should be timestamped.
+Contextual details:
 
-### Technical inspection
-
-Where permissions allow:
-
+- amount;
+- merchant order;
+- selected provider;
+- score inputs;
+- attempts;
 - normalized request;
-- provider request metadata;
-- normalized response;
 - provider response metadata;
 - webhook events;
-- routing decision explanation.
+- idempotency key;
+- request IDs.
 
-Secrets must never be rendered in logs.
+Panels should be resizable and collapsible.
 
-## 9. Providers screen
+## 14. Providers
 
-Providers are presented as connections, not as payment accounts owned by Conver Pay.
+Providers should feel like infrastructure nodes, not marketplace cards.
 
-Each provider row/card should show:
+Each connection shows:
 
-- provider name;
-- connection status;
-- health status;
-- QR creation success rate;
-- conversion rate;
-- p50/p95 latency;
-- recent error rate;
+- current status;
+- health;
 - traffic share;
-- environment;
-- last successful request.
+- QR success;
+- conversion;
+- p50/p95 latency;
+- error rate;
+- last successful request;
+- environment.
+
+A provider detail view should combine live metrics, incidents, recent requests and configuration.
 
 Connection flow:
 
-1. Select provider.
-2. Enter merchant-owned credentials.
-3. Validate credentials.
-4. Generate/display Conver Pay provider webhook URL.
+1. Choose provider.
+2. Add merchant-owned credentials.
+3. Validate connection.
+4. Receive Conver Pay inbound webhook URL.
 5. Verify webhook connectivity.
-6. Activate connection.
+6. Activate provider.
 
-Credentials must be write-only after creation wherever practical.
+Credentials are write-only after creation wherever practical.
 
-## 10. Routing screen
+## 15. Routing
 
-Routing must be understandable and auditable.
-
-Initial modes:
+Initial routing modes:
 
 ### Automatic
-
-Conver Pay chooses the route from health and performance signals.
+Conver Pay chooses the route from measured performance and health signals.
 
 ### Priority
-
-Merchant defines provider order and Conver Pay performs safe failover.
+Merchant defines preferred provider order and Conver Pay performs safe failover.
 
 ### Rules
-
 Merchant defines explicit routing constraints.
 
-The UI must always expose a human-readable explanation of why a provider was selected.
+Every routing decision must be auditable.
 
-Example:
+The UI should expose both:
 
-> BlackCat selected because it is healthy, has the highest weighted conversion score in the current window, and its p95 QR latency is below the configured SLA.
+- current configuration;
+- actual observed routing behavior.
 
-Avoid opaque AI-style explanations.
+Avoid opaque "AI decided" copy.
 
-## 11. Observability
+## 16. Observability
 
-Observability is not a decorative analytics page. It is an operational surface.
+Observability should feel closer to a modern developer observability product than to a finance report.
 
-Required views:
+Required metrics:
 
 - provider availability;
 - QR creation latency;
-- QR creation success;
+- QR creation success rate;
 - payment conversion;
 - error classes;
 - timeout rate;
 - webhook delivery latency;
 - routing distribution;
 - fallback rate;
-- recovery rate.
+- recovery rate;
+- recovered revenue.
 
-Every chart should support drill-down into the payments behind the metric when practical.
+Charts should support hover inspection, zoom/range selection and drill-down to the payments behind a data point.
 
-## 12. Webhooks
+## 17. Webhooks and Developer surfaces
 
-Separate clearly:
-
-### Provider inbound webhooks
-
-Provider → Conver Pay
-
-### Merchant outbound webhooks
-
-Conver Pay → Merchant
-
-Show:
-
-- endpoint;
-- signing state;
-- delivery status;
-- attempts;
-- response status;
-- latency;
-- last error;
-- replay action.
-
-## 13. Developer experience
-
-Developer surfaces should be clean and technical.
+Developer surfaces should be crisp and technical.
 
 Include:
 
 - API keys;
-- webhook secrets;
+- webhook endpoints;
+- signing secrets;
 - API logs;
 - request IDs;
 - idempotency keys;
-- sandbox/live environment selector;
-- API documentation links;
-- code examples later.
+- sandbox/live selector;
+- request/response inspector;
+- webhook replay;
+- copy-as-cURL later;
+- documentation links.
 
-Never show complete secrets again after creation unless the security model explicitly supports it.
+Secrets must never leak into logs or normal UI states.
 
-## 14. Interaction principles
+## 18. Interaction and motion
 
-- Prefer tables for operational datasets.
-- Prefer timelines for payment lifecycle and failover evidence.
-- Prefer inline status badges for state.
-- Prefer drawers for quick inspection when the user should remain in context.
-- Prefer dedicated pages for deep forensic inspection.
-- Every destructive action requires explicit confirmation.
-- Every routing configuration change should be auditable.
-- Never hide important failure information behind generic messages.
-- Latency and state transitions should use explicit units and timestamps.
+Motion should reinforce cause and effect.
 
-## 15. Anti-patterns
+Good uses:
+
+- route switching;
+- provider health transition;
+- payment status transition;
+- inspector opening;
+- command palette;
+- topology updates;
+- recovery confirmation.
+
+Avoid:
+
+- constant ambient animations;
+- decorative loading loops;
+- bouncing KPI cards;
+- excessive spring effects;
+- animation that delays access to data.
+
+Perceived speed is part of the brand. Interactions should feel immediate.
+
+## 19. Empty, loading and failure states
+
+These states are part of the product design.
+
+Loading:
+- use structural skeletons only when needed;
+- prefer streamed/partial data where possible;
+- never block unrelated parts of the page.
+
+Failure:
+- show exact operational state;
+- include error class, timestamp and retry/recovery action;
+- do not use vague "something went wrong" messages for provider failures.
+
+Empty:
+- explain the next meaningful action;
+- avoid generic illustrations.
+
+## 20. Anti-patterns
 
 Do not build:
 
 - a Revolut clone;
-- a generic shadcn admin dashboard with no product-specific hierarchy;
-- a dashboard dominated by vanity metrics;
-- arbitrary colorful cards for each KPI;
-- fake AI routing visualizations;
-- animated payment flows that obscure real operational state;
-- provider rankings without sample-size/window context;
-- claims of recovered revenue without an auditable recovery event.
+- a Modern Treasury clone;
+- a Stripe clone;
+- a generic shadcn dashboard;
+- a legacy banking dashboard;
+- a wall of rounded KPI cards;
+- arbitrary gradients;
+- excessive glassmorphism;
+- cyberpunk/neon UI;
+- fake real-time animations;
+- AI-looking purple gradients everywhere;
+- provider rankings without sample/window context;
+- recovered-revenue claims without auditable evidence.
 
-## 16. Initial identity hypothesis
+## 21. Signature Conver Pay elements
 
-Conver Pay should feel like infrastructure that protects revenue.
+The visual identity should emerge from a small number of recurring, product-specific elements:
 
-Working visual direction:
+1. Live Routing Topology
+2. Recovery Event
+3. Payment Attempt Timeline
+4. Provider Health Node
+5. Routing Decision Inspector
+6. Global Command Palette
+7. Live/Test environment state
 
-- graphite / off-white neutrals;
-- indigo-cobalt brand accent;
-- emerald reserved for recovery and healthy/success states;
-- precise typography;
-- compact cards and tables;
-- restrained borders and shadows;
-- charts optimized for comparison rather than decoration.
+These components should receive more design attention than generic cards or marketing decoration.
 
-This identity is provisional until the logo and brand tokens are finalized.
+## 22. Design principle
+
+Conver Pay should look modern because the product model is modern, not because it uses trendy visual effects.
+
+The target experience is:
+
+**Linear-level clarity + Raycast-level finish + Attio-level data interaction + Primer-level payment semantics + Stripe/Vercel-level developer confidence — with a distinct Conver Pay routing identity.**
