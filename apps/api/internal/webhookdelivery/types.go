@@ -14,18 +14,19 @@ type Endpoint struct {
 	URL                     string
 	SigningSecretCiphertext string
 	Enabled                 bool
+	ActiveSince             time.Time
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
 }
 
 type Job struct {
-	DeliveryID               string
-	MerchantEventID           string
-	EventType                 string
-	Payload                   []byte
-	TargetURL                 string
-	SigningSecretCiphertext   string
-	AttemptCount              int
+	DeliveryID             string
+	MerchantEventID        string
+	EventType              string
+	Payload                []byte
+	TargetURL              string
+	SigningSecretCiphertext string
+	AttemptCount           int
 }
 
 type Completion struct {
