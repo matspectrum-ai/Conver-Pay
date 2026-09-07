@@ -13,11 +13,11 @@ func (s *Store) GetProviderConnection(ctx context.Context, id string) (*domain.P
 	var conn domain.ProviderConnection
 	err := s.pool.QueryRow(ctx, `
 		SELECT id, workspace_id, provider_key, environment, enabled,
-			credentials_valid, circuit_state, priority
+			credentials_valid, circuit_state, circuit_opened_at, priority
 		FROM conver_pay.provider_connections
 		WHERE id=$1
 	`, id).Scan(&conn.ID, &conn.WorkspaceID, &conn.ProviderKey, &conn.Environment,
-		&conn.Enabled, &conn.CredentialsValid, &conn.Circuit, &conn.Priority)
+		&conn.Enabled, &conn.CredentialsValid, &conn.Circuit, &conn.CircuitOpenedAt, &conn.Priority)
 	if err != nil {
 		return nil, mapNotFound(err)
 	}

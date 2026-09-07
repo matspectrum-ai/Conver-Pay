@@ -17,6 +17,7 @@ import (
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/logging"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/orchestration"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/routingtelemetry"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/secretbox"
 	storepostgres "github.com/matspectrum-ai/conver-pay/apps/api/internal/store/postgres"
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/webhookdelivery"
@@ -51,9 +52,11 @@ func main() {
 		defer db.Close()
 
 		store := storepostgres.New(db.Pool())
+		routingTelemetry := routingtelemetry.New(store, routingtelemetry.Options{})
 		orchestrator := orchestration.New(orchestration.Options{
-			Repository: store,
-			Providers:  provider.MapRegistry{},
+			Repository:       store,
+			Providers:        provider.MapRegistry{},
+			RoutingTelemetry: routingTelemetry,
 		})
 		payments = orchestrator
 		providerWebhooks = orchestrator
