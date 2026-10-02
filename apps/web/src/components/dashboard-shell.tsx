@@ -6,7 +6,7 @@ import { Icons } from "./icons";
 import { PaymentInspector } from "./payment-inspector";
 import { RoutingMap } from "./routing-map";
 import { SectionPreview } from "./section-previews";
-import { payments, providers, recoveries, type Payment } from "@/lib/dashboard-data";
+import { connectorCatalog, payments, providers, recoveries, type Payment } from "@/lib/dashboard-data";
 
 const nav = [
   ["Overview", Icons.overview], ["Payments", Icons.payments], ["Recoveries", Icons.recoveries],
@@ -32,6 +32,7 @@ export function DashboardShell() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [active, setActive] = useState("Overview");
   const [mobileNav, setMobileNav] = useState(false);
+  const [connectProviderOpen, setConnectProviderOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
   const closeInspector = useCallback(() => setSelectedPayment(null), []);
@@ -96,7 +97,7 @@ export function DashboardShell() {
           <div className="topbar-actions">
             <div className="system-health"><span className="live-dot" /> All systems operational</div>
             <button className="icon-button" aria-label="Notifications">◌<span className="notification-dot" /></button>
-            <button className="primary-button"><Icons.plus className="icon" /> {primaryAction}</button>
+            <button className="primary-button" onClick={() => active === "Providers" ? setConnectProviderOpen(true) : undefined}><Icons.plus className="icon" /> {primaryAction}</button>
           </div>
         </header>
 
@@ -137,6 +138,24 @@ export function DashboardShell() {
       </main>
       {mobileNav && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileNav(false)} />}
       <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
+      {connectProviderOpen && (
+        <div className="connector-backdrop" role="presentation" onMouseDown={() => setConnectProviderOpen(false)}>
+          <section className="connector-modal" role="dialog" aria-modal="true" aria-label="Connect provider" onMouseDown={(event) => event.stopPropagation()}>
+            <header><div><span className="section-kicker">NEW CONNECTION</span><h2>Connect a provider</h2><p>Choose a connector. Credentials and provider-specific setup stay behind this boundary.</p></div><button className="inspector-close" aria-label="Close connector picker" onClick={() => setConnectProviderOpen(false)}>×<kbd>Esc</kbd></button></header>
+            <div className="connector-picker-list">
+              {connectorCatalog.slice(0, 3).map((connector) => (
+                <button className={`connector-picker-row ${connector.status === "Production-qualified" ? "ready" : ""}`} key={connector.key}>
+                  <span className={`connector-mark connector-${connector.key}`}>{connector.name[0]}</span>
+                  <span><strong>{connector.name}</strong><small>{connector.status} · {connector.version === "planned" ? "future connector" : `v${connector.version}`}</small></span>
+                  <span className="connector-picker-caps">{connector.capabilities.slice(0, 2).map((cap) => <i key={cap}>{cap}</i>)}</span>
+                  <span className="connector-card-arrow">›</span>
+                </button>
+              ))}
+            </div>
+            <footer><span>Connector catalog grows independently from the merchant API.</span><button className="ghost-button" onClick={() => setConnectProviderOpen(false)}>Cancel</button></footer>
+          </section>
+        </div>
+      )}
       <PaymentInspector payment={selectedPayment} onClose={closeInspector} onNavigate={navigatePayment} />
     </div>
   );
