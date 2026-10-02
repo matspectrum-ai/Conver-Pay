@@ -40,7 +40,7 @@ Deliverables:
 - RoutingDecision;
 - RecoveryEvent;
 - persistent idempotency;
-- deterministic fake provider adapters;
+- deterministic fake provider connectors;
 - orchestration service;
 - safe fallback classification;
 - unknown/reconciliation flow.
@@ -100,13 +100,13 @@ Goal: validate abstractions against reality.
 
 Deliverables:
 
-- first production-grade provider adapter;
+- first production-grade provider connector;
 - sandbox/test integration;
 - credential validation;
 - webhook verification;
 - provider-specific failure classifier;
 - provider-specific idempotency/reconciliation capability matrix;
-- adapter contract tests.
+- connector contract tests.
 
 Gate:
 
@@ -119,7 +119,7 @@ Goal: prove cross-provider orchestration.
 
 Deliverables:
 
-- second production-grade adapter;
+- second production-grade provider connector;
 - cross-provider safe fallback tests;
 - provider degradation simulator;
 - recovery attribution end-to-end;

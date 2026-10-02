@@ -1,8 +1,6 @@
 package provider
 
 import (
-	"context"
-
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/domain"
 )
 
@@ -52,8 +50,4 @@ type ReconcileOutcome struct {
 	FailureCode       string
 }
 
-type Adapter interface {
-	Key() string
-	CreatePix(context.Context, CreateRequest) CreateOutcome
-	Reconcile(context.Context, ReconcileRequest) ReconcileOutcome
-}
+type Adapter = Connector

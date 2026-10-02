@@ -9,7 +9,7 @@ import (
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
 )
 
-type Adapter struct {
+type Connector struct {
 	key string
 
 	mu                sync.Mutex
@@ -19,13 +19,22 @@ type Adapter struct {
 	reconcileCalls    int
 }
 
-func New(key string, creates []provider.CreateOutcome, reconciles []provider.ReconcileOutcome) *Adapter {
-	return &Adapter{key: key, createOutcomes: creates, reconcileOutcomes: reconciles}
+type Adapter = Connector
+
+func New(key string, creates []provider.CreateOutcome, reconciles []provider.ReconcileOutcome) *Connector {
+	return &Connector{key: key, createOutcomes: creates, reconcileOutcomes: reconciles}
 }
 
-func (a *Adapter) Key() string { return a.key }
+func (a *Connector) Key() string { return a.key }
 
-func (a *Adapter) CreatePix(_ context.Context, _ provider.CreateRequest) provider.CreateOutcome {
+func (a *Connector) Manifest() provider.Manifest {
+	return provider.Manifest{
+		Key: a.key, DisplayName: a.key, Version: "test",
+		Capabilities: []provider.Capability{provider.CapabilityPaymentCreate, provider.CapabilityPixCreate, provider.CapabilityPaymentQuery, provider.CapabilityCreateReconcile},
+	}
+}
+
+func (a *Connector) CreatePix(_ context.Context, _ provider.CreateRequest) provider.CreateOutcome {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.createCalls++
@@ -37,7 +46,7 @@ func (a *Adapter) CreatePix(_ context.Context, _ provider.CreateRequest) provide
 	return out
 }
 
-func (a *Adapter) Reconcile(_ context.Context, _ provider.ReconcileRequest) provider.ReconcileOutcome {
+func (a *Connector) Reconcile(_ context.Context, _ provider.ReconcileRequest) provider.ReconcileOutcome {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.reconcileCalls++
@@ -49,24 +58,32 @@ func (a *Adapter) Reconcile(_ context.Context, _ provider.ReconcileRequest) prov
 	return out
 }
 
-func (a *Adapter) CreateCalls() int {
+func (a *Connector) CreateCalls() int {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.createCalls
 }
 
-func (a *Adapter) ReconcileCalls() int {
+func (a *Connector) ReconcileCalls() int {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.reconcileCalls
 }
 
-type Registry map[string]provider.Adapter
+type Registry map[string]provider.ProviderConnector
 
-func (r Registry) Resolve(_ context.Context, connection domain.ProviderConnection) (provider.Adapter, error) {
+func (r Registry) Resolve(_ context.Context, connection domain.ProviderConnection) (provider.ProviderConnector, error) {
 	a, ok := r[connection.ProviderKey]
 	if !ok {
-		return nil, fmt.Errorf("fake provider %q not registered", connection.ProviderKey)
+		return nil, fmt.Errorf("fake provider connector %q not registered", connection.ProviderKey)
 	}
 	return a, nil
+}
+
+func (r Registry) Manifest(providerKey string) (provider.Manifest, bool) {
+	a, ok := r[providerKey]
+	if !ok {
+		return provider.Manifest{}, false
+	}
+	return a.Manifest(), true
 }

@@ -1,9 +1,6 @@
 package provider
 
-import (
-	"context"
-	"errors"
-)
+import "errors"
 
 var (
 	ErrInvalidWebhookSignature = errors.New("invalid webhook signature")
@@ -21,7 +18,4 @@ type WebhookEvent struct {
 	ProviderPaymentID string
 }
 
-type WebhookAdapter interface {
-	Adapter
-	ParseWebhook(context.Context, WebhookRequest) (WebhookEvent, error)
-}
+type WebhookAdapter = WebhookConnector
