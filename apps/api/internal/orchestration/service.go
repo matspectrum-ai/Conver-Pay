@@ -73,7 +73,7 @@ func New(opts Options) *Service {
 	return &Service{
 		repo:        opts.Repository,
 		providers:   opts.Providers,
-		router:      Router{},
+		router:      Router{catalog: opts.Providers},
 		telemetry:   opts.RoutingTelemetry,
 		clock:       clock,
 		ids:         ids,
@@ -154,7 +154,7 @@ func (s *Service) executeRouting(ctx context.Context, intent *domain.PaymentInte
 	}
 
 	for len(attempts) < s.maxAttempts {
-		route := s.router.Select(connections, env, excluded, health)
+		route := s.router.Select(connections, env, excluded, provider.CapabilityPixCreate, health)
 		if route.Selected == nil {
 			intent.Status = domain.PaymentStatusFailed
 			intent.FailureCode = "no_eligible_provider"

@@ -78,6 +78,10 @@ func NewFactory(opts Options) (*Factory, error) {
 	}, nil
 }
 
+func (f *Factory) Manifest() provider.Manifest {
+	return wooviManifest()
+}
+
 func (f *Factory) ValidateCredentials(ctx context.Context, environment domain.Environment, credentials map[string]string) error {
 	appID := strings.TrimSpace(credentials["app_id"])
 	if appID == "" {
@@ -105,7 +109,7 @@ func (f *Factory) ValidateCredentials(ctx context.Context, environment domain.En
 	}
 }
 
-func (f *Factory) AdapterFor(ctx context.Context, connection domain.ProviderConnection) (provider.Adapter, error) {
+func (f *Factory) ConnectorFor(ctx context.Context, connection domain.ProviderConnection) (provider.ProviderConnector, error) {
 	ciphertext, err := f.credentials.GetProviderCredentialCiphertext(ctx, connection.ID)
 	if err != nil {
 		return nil, err
@@ -122,7 +126,7 @@ func (f *Factory) AdapterFor(ctx context.Context, connection domain.ProviderConn
 	if appID == "" {
 		return nil, provider.ErrInvalidCredentials
 	}
-	return &Adapter{appID: appID, baseURL: f.baseURL(connection.Environment), client: f.client, keys: f.keys}, nil
+	return &Connector{appID: appID, baseURL: f.baseURL(connection.Environment), client: f.client, keys: f.keys}, nil
 }
 
 func (f *Factory) baseURL(environment domain.Environment) string {
@@ -132,14 +136,14 @@ func (f *Factory) baseURL(environment domain.Environment) string {
 	return f.sandbox
 }
 
-type Adapter struct {
+type Connector struct {
 	appID   string
 	baseURL string
 	client  *http.Client
 	keys    *publicKeyCache
 }
 
-func (a *Adapter) Key() string { return Key }
+func (a *Connector) Key() string { return Key }
 
 type chargePayload struct {
 	CorrelationID string `json:"correlationID"`
@@ -158,7 +162,7 @@ type chargeEnvelope struct {
 	BRCode string `json:"brCode"`
 }
 
-func (a *Adapter) CreatePix(ctx context.Context, request provider.CreateRequest) provider.CreateOutcome {
+func (a *Connector) CreatePix(ctx context.Context, request provider.CreateRequest) provider.CreateOutcome {
 	payload, _ := json.Marshal(chargePayload{CorrelationID: request.AttemptID, Value: request.Amount, Comment: request.MerchantOrderID})
 	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, a.baseURL+"/api/v1/charge", bytes.NewReader(payload))
 	if err != nil {
@@ -199,7 +203,7 @@ func classifyCreateStatus(status int) provider.CreateOutcome {
 	}
 }
 
-func (a *Adapter) Reconcile(ctx context.Context, request provider.ReconcileRequest) provider.ReconcileOutcome {
+func (a *Connector) Reconcile(ctx context.Context, request provider.ReconcileRequest) provider.ReconcileOutcome {
 	endpoint := a.baseURL + "/api/v1/charge/" + url.PathEscape(request.AttemptID)
 	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -247,7 +251,7 @@ func (a *Adapter) Reconcile(ctx context.Context, request provider.ReconcileReque
 	}
 }
 
-func (a *Adapter) ParseWebhook(ctx context.Context, request provider.WebhookRequest) (provider.WebhookEvent, error) {
+func (a *Connector) ParseWebhook(ctx context.Context, request provider.WebhookRequest) (provider.WebhookEvent, error) {
 	signature := headerValue(request.Headers, "x-webhook-signature")
 	if signature == "" {
 		return provider.WebhookEvent{}, provider.ErrInvalidWebhookSignature
@@ -280,7 +284,7 @@ func (a *Adapter) ParseWebhook(ctx context.Context, request provider.WebhookRequ
 	}, nil
 }
 
-func (a *Adapter) authorize(request *http.Request) {
+func (a *Connector) authorize(request *http.Request) {
 	request.Header.Set("Authorization", a.appID)
 	request.Header.Set("Accept", "application/json")
 	request.Header.Set("Content-Type", "application/json")
@@ -405,5 +409,24 @@ func verifySignature(keys []*rsa.PublicKey, body []byte, encoded string) bool {
 	return false
 }
 
+func wooviManifest() provider.Manifest {
+	return provider.Manifest{
+		Key: Key, DisplayName: "Woovi", Version: "1.0.0",
+		Capabilities: []provider.Capability{
+			provider.CapabilityPaymentCreate, provider.CapabilityPixCreate,
+			provider.CapabilityPaymentQuery,
+			provider.CapabilityCreateReconcile, provider.CapabilityWebhook,
+		},
+		CredentialTypes: []string{"app_id"},
+	}
+}
+
+func (c *Connector) Manifest() provider.Manifest {
+	return wooviManifest()
+}
+
 var _ provider.Integration = (*Factory)(nil)
-var _ provider.WebhookAdapter = (*Adapter)(nil)
+var _ provider.WebhookAdapter = (*Connector)(nil)
+
+// Adapter is kept as a local compatibility alias for existing tests and fixtures.
+type Adapter = Connector

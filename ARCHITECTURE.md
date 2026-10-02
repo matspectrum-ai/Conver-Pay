@@ -1,6 +1,6 @@
 # Conver Pay — Architecture
 
-Status: Draft v0.1
+Status: Draft v0.2
 
 ## 1. Architectural objective
 
@@ -12,7 +12,7 @@ The architecture must optimize for:
 - deterministic routing;
 - safe failover;
 - auditable decisions;
-- provider abstraction;
+- provider connector abstraction;
 - idempotent APIs;
 - strong tenant isolation;
 - high observability;
@@ -96,7 +96,7 @@ Responsible for payment execution:
 - idempotency;
 - payment state machine;
 - routing;
-- provider adapters;
+- provider connectors;
 - provider requests;
 - provider webhook ingestion;
 - reconciliation;
@@ -284,37 +284,93 @@ Therefore:
 - timeout => `unknown`, not `failed_safe`;
 - `unknown` blocks normal fallback by default;
 - reconciliation or provider-specific idempotency semantics are required before fallback;
-- every provider adapter must document which failure classes are safe to retry/fallback.
+- every provider connector must document which failure classes are safe to retry/fallback.
 
-## 8. Provider adapter contract
+## 8. Provider connector contract
 
-Every provider integration implements a common internal contract.
+Every provider integration is a **Provider Connector**. A connector is the only boundary allowed to know a provider-specific API, authentication scheme, request format, response shape or webhook protocol.
 
-Conceptual interface:
+The connector stack has three layers:
+
+```text
+Provider Connector Registry
+          │
+          ├── Manifest / capabilities
+          ├── Credential validation
+          └── Connection factory
+                    │
+                    ▼
+             ProviderConnector
+                    │
+          ┌─────────┼─────────┐
+          ▼         ▼         ▼
+       Provider A Provider B Provider C
+```
+
+Conceptual interfaces:
 
 ```go
-type ProviderAdapter interface {
+type ProviderConnector interface {
+    Manifest() Manifest
     CreatePix(ctx context.Context, req CreatePixRequest) (CreatePixResult, error)
-    GetPayment(ctx context.Context, ref ProviderPaymentRef) (ProviderPayment, error)
     ReconcileCreate(ctx context.Context, req ReconcileCreateRequest) (ReconcileCreateResult, error)
+}
+
+type WebhookConnector interface {
+    ProviderConnector
     ParseWebhook(ctx context.Context, req RawWebhook) (NormalizedWebhookEvent, error)
-    VerifyWebhook(ctx context.Context, req RawWebhook) error
-    HealthCapabilities() ProviderCapabilities
 }
 ```
 
-The concrete language is not fixed by this document, but the behavioral contract is.
+A connector must expose a versioned manifest containing capabilities and credential requirements. Examples include:
 
-Each adapter must declare capabilities such as:
+- Pix creation;
+- payment lookup;
+- create reconciliation;
+- webhook reception;
+- refund;
+- cancellation;
+- provider-side idempotency;
+- lookup by merchant/reference identity.
 
-- provider-side idempotency supported;
-- lookup by external merchant reference supported;
-- create reconciliation supported;
-- webhook signature verification supported;
-- cancellation supported;
-- expiration supported.
+Capabilities are facts about what a connector can safely execute. Routing may only select a connection whose connector supports the requested capability.
 
-Routing/fallback policy may depend on capabilities.
+The connector factory resolves a concrete connector from a `ProviderConnection`, so credentials are connection-scoped:
+
+```text
+ProviderConnection
+      │
+      ▼
+ConnectorFactory
+      │
+      ▼
+ProviderConnector
+      │
+      ▼
+Provider API
+```
+
+The orchestration core never receives provider-native payloads. The public API never exposes provider-native payloads. The first supported payment method is Pix, but Pix is a payment-method capability of the platform, not the public product boundary.
+
+New providers are added as connector modules rather than as branches inside the router or payment state machine.
+
+### Connector qualification
+
+A connector moves through explicit lifecycle states:
+
+```text
+draft
+  ↓
+contract-tested
+  ↓
+sandbox-validated
+  ↓
+production-qualified
+  ↓
+deprecated
+```
+
+The repository may contain many connectors, but only qualified connectors can be enabled for live routing.
 
 ## 9. Normalized create contract
 
@@ -449,7 +505,7 @@ Conceptual flow:
 3. Build eligible provider set.
 4. Select provider deterministically.
 5. Persist RoutingDecision and PaymentAttempt before external call.
-6. Call provider through adapter.
+6. Call provider through connector.
 7. Classify outcome.
 8. If succeeded:
       persist Pix atomically;
@@ -700,7 +756,7 @@ Conver Pay application
 ├── HTTP API
 ├── orchestration core
 ├── routing engine
-├── provider adapters
+├── provider connectors
 ├── webhook ingress
 ├── background workers
 ├── admin/dashboard backend
@@ -722,7 +778,7 @@ Required categories:
 
 ### Contract tests
 
-Each provider adapter is tested against a common behavioral contract.
+Each provider connector is tested against a common behavioral contract.
 
 ### State-machine tests
 

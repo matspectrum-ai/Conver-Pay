@@ -4,9 +4,12 @@ import (
 	"sort"
 
 	"github.com/matspectrum-ai/conver-pay/apps/api/internal/domain"
+	"github.com/matspectrum-ai/conver-pay/apps/api/internal/provider"
 )
 
-type Router struct{}
+type Router struct {
+	catalog provider.Registry
+}
 
 type RouteResult struct {
 	Selected     *domain.ProviderConnection
@@ -15,7 +18,7 @@ type RouteResult struct {
 	ScoreVersion string
 }
 
-func (Router) Select(connections []domain.ProviderConnection, env domain.Environment, excluded map[string]bool, health ...map[string]domain.ProviderHealthSnapshot) RouteResult {
+func (r Router) Select(connections []domain.ProviderConnection, env domain.Environment, excluded map[string]bool, requiredCapability provider.Capability, health ...map[string]domain.ProviderHealthSnapshot) RouteResult {
 	healthByConnection := map[string]domain.ProviderHealthSnapshot{}
 	if len(health) > 0 && health[0] != nil {
 		healthByConnection = health[0]
@@ -60,22 +63,35 @@ func (Router) Select(connections []domain.ProviderConnection, env domain.Environ
 			snapshot.LatencyP95MS = h.LatencyP95MS
 		}
 
-		switch {
-		case excluded[conn.ID]:
-			snapshot.Eligible = false
-			snapshot.ExclusionReason = "already_attempted"
-		case !conn.Enabled:
-			snapshot.Eligible = false
-			snapshot.ExclusionReason = "disabled"
-		case conn.Environment != env:
-			snapshot.Eligible = false
-			snapshot.ExclusionReason = "wrong_environment"
-		case !conn.CredentialsValid:
-			snapshot.Eligible = false
-			snapshot.ExclusionReason = "invalid_credentials"
-		case conn.Circuit == domain.CircuitOpen:
-			snapshot.Eligible = false
-			snapshot.ExclusionReason = "circuit_open"
+		if r.catalog != nil {
+			manifest, found := r.catalog.Manifest(conn.ProviderKey)
+			if !found {
+				snapshot.Eligible = false
+				snapshot.ExclusionReason = "connector_not_registered"
+			} else if !manifest.Supports(requiredCapability) {
+				snapshot.Eligible = false
+				snapshot.ExclusionReason = "capability_unsupported"
+			}
+		}
+
+		if snapshot.Eligible {
+			switch {
+			case excluded[conn.ID]:
+				snapshot.Eligible = false
+				snapshot.ExclusionReason = "already_attempted"
+			case !conn.Enabled:
+				snapshot.Eligible = false
+				snapshot.ExclusionReason = "disabled"
+			case conn.Environment != env:
+				snapshot.Eligible = false
+				snapshot.ExclusionReason = "wrong_environment"
+			case !conn.CredentialsValid:
+				snapshot.Eligible = false
+				snapshot.ExclusionReason = "invalid_credentials"
+			case conn.Circuit == domain.CircuitOpen:
+				snapshot.Eligible = false
+				snapshot.ExclusionReason = "circuit_open"
+			}
 		}
 
 		result.Candidates = append(result.Candidates, snapshot)

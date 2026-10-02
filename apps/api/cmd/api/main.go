@@ -55,7 +55,7 @@ func main() {
 		defer db.Close()
 
 		store := storepostgres.New(db.Pool())
-		providerRegistry := provider.IntegrationRegistry{}
+		connectorRegistry := provider.ConnectorRegistry{}
 		if cfg.ProviderCredentialsMasterKey != "" {
 			providerBox, boxErr := secretbox.NewBase64(cfg.ProviderCredentialsMasterKey)
 			if boxErr != nil {
@@ -70,9 +70,9 @@ func main() {
 				logger.Error("woovi integration initialization failed", "error", factoryErr)
 				os.Exit(1)
 			}
-			providerRegistry[woovi.Key] = wooviFactory
+			connectorRegistry[woovi.Key] = wooviFactory
 			connectionService, serviceErr := providerconnections.New(providerconnections.Options{
-				Store: store, Validator: providerRegistry, Cipher: providerBox,
+				Store: store, Validator: connectorRegistry, Cipher: providerBox,
 			})
 			if serviceErr != nil {
 				logger.Error("provider connection service initialization failed", "error", serviceErr)
@@ -86,7 +86,7 @@ func main() {
 		routingTelemetry := routingtelemetry.New(store, routingtelemetry.Options{})
 		orchestrator := orchestration.New(orchestration.Options{
 			Repository:       store,
-			Providers:        providerRegistry,
+			Providers:        connectorRegistry,
 			RoutingTelemetry: routingTelemetry,
 		})
 		payments = orchestrator
