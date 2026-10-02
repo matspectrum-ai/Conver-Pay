@@ -1,6 +1,6 @@
 import { Icons } from "./icons";
 import { RoutingMap } from "./routing-map";
-import { payments, providers, recoveries, type Payment } from "@/lib/dashboard-data";
+import { connectorCatalog, payments, providers, recoveries, type Payment } from "@/lib/dashboard-data";
 
 function PageHeader({ kicker, title, copy }: { kicker: string; title: string; copy: string }) {
   return <section className="subpage-header"><div><p className="eyebrow">{kicker}</p><h1>{title}</h1><p>{copy}</p></div></section>;
@@ -34,10 +34,40 @@ function RoutingView() {
   </>;
 }
 
-function ProvidersView() {
+function ProvidersView({ onConnect }: { onConnect: () => void }) {
   return <>
-    <PageHeader kicker="CONNECTIONS" title="Providers" copy="Merchant-owned provider connections, health and traffic allocation." />
-    <div className="provider-directory">{providers.map((provider)=><div className="provider-directory-row" key={provider.id}><div className="provider-identity"><span className={`provider-logo provider-${provider.id}`}>{provider.name[0]}</span><div><strong>{provider.name}</strong><span>Live · credentials verified</span></div></div><div className="provider-directory-stat"><span>Traffic</span><strong>{provider.share}%</strong></div><div className="provider-directory-stat"><span>QR success</span><strong>{provider.success}%</strong></div><div className="provider-directory-stat"><span>p95 latency</span><strong>{provider.latency} ms</strong></div><div className="provider-directory-stat"><span>Health score</span><strong>{Math.round(provider.score*100)}</strong></div><span className={`status ${provider.state==='healthy'?'status-paid':'status-reconciling'}`}><i/>{provider.state}</span><button className="row-action">›</button></div>)}</div>
+    <PageHeader kicker="PROVIDERS" title="Provider connections" copy="Merchant-owned accounts connected through versioned Conver Pay connectors. Change routing without changing your application integration." />
+    <section className="provider-summary-strip">
+      <div><span>Connected accounts</span><strong>3</strong><small>across 3 providers</small></div>
+      <div><span>Available connectors</span><strong>4</strong><small>1 production-qualified</small></div>
+      <div><span>Live traffic</span><strong>100%</strong><small>routing enabled</small></div>
+      <div><span>Connector boundary</span><strong>stable</strong><small>provider API hidden</small></div>
+    </section>
+
+    <section className="provider-layout">
+      <div>
+        <div className="section-heading-inline"><div><span className="section-kicker">CONNECTED ACCOUNTS</span><h2>Provider accounts</h2></div><button className="primary-button compact-primary" onClick={onConnect}><span className="plus-mark">+</span>Connect provider</button></div>
+        <div className="provider-directory">{providers.map((provider)=><div className="provider-directory-row" key={provider.id}>
+          <div className="provider-identity"><span className={`provider-logo provider-${provider.id}`}>{provider.name[0]}</span><div><strong>{provider.name}</strong><span>Connector {provider.id === "woovi" ? "1.0.0" : "draft"} · Live</span></div></div>
+          <div className="provider-directory-stat"><span>Traffic</span><strong>{provider.share}%</strong></div>
+          <div className="provider-directory-stat"><span>QR success</span><strong>{provider.success}%</strong></div>
+          <div className="provider-directory-stat"><span>p95 latency</span><strong>{provider.latency} ms</strong></div>
+          <div className="provider-directory-stat"><span>Health score</span><strong>{Math.round(provider.score*100)}</strong></div>
+          <span className={`status ${provider.state==='healthy'?'status-paid':'status-reconciling'}`}><i/>{provider.state}</span>
+          <button className="row-action" aria-label={`Open ${provider.name}`}>›</button>
+        </div>)}</div>
+      </div>
+
+      <div>
+        <div className="section-heading-inline"><div><span className="section-kicker">CONNECTOR CATALOG</span><h2>Integration modules</h2></div><span className="muted">4 available</span></div>
+        <div className="connector-catalog">{connectorCatalog.map((connector)=><button className="connector-card" key={connector.key} onClick={connector.status === "Production-qualified" ? onConnect : undefined}>
+          <span className={`connector-mark connector-${connector.key}`}>{connector.name[0]}</span>
+          <span className="connector-card-main"><strong>{connector.name}</strong><small>{connector.status}</small><span className="connector-version">{connector.version === "planned" ? "Roadmap" : `v${connector.version}`}</span></span>
+          <span className="connector-capabilities">{connector.capabilities.slice(0, 3).map((cap) => <i key={cap}>{cap}</i>)}{connector.capabilities.length > 3 && <i>+{connector.capabilities.length - 3}</i>}</span>
+          <span className="connector-card-arrow">›</span>
+        </button>)}</div>
+      </div>
+    </section>
   </>;
 }
 
@@ -65,12 +95,12 @@ function SettingsView() {
   return <><PageHeader kicker="WORKSPACE" title="Settings" copy="Workspace identity and environment controls. Secrets remain write-only."/><section className="settings-stack"><div className="panel settings-group"><div className="panel-header compact"><div><span className="section-kicker">GENERAL</span><h2>Workspace</h2></div></div><div className="settings-row"><div><strong>Name</strong><span>Shown across the Conver Pay workspace.</span></div><button className="field-button">Conver Pay</button></div><div className="settings-row"><div><strong>Environment</strong><span>Current operational context.</span></div><button className="field-button"><span className="live-dot"/> Live</button></div></div><div className="panel settings-group"><div className="panel-header compact"><div><span className="section-kicker">DANGER ZONE</span><h2>Operational controls</h2></div></div><div className="settings-row"><div><strong>Provider kill switch</strong><span>Immediately stop new routing while preserving reconciliation.</span></div><button className="danger-button">Disable routing</button></div></div></section></>;
 }
 
-export function SectionPreview({ section, onOpenPayment }: { section: string; onOpenPayment: (payment: Payment) => void }) {
+export function SectionPreview({ section, onOpenPayment, onConnectProvider = () => undefined }: { section: string; onOpenPayment: (payment: Payment) => void; onConnectProvider?: () => void }) {
   switch(section){
     case 'Payments': return <PaymentsView onOpenPayment={onOpenPayment}/>;
     case 'Recoveries': return <RecoveriesView onOpenPayment={onOpenPayment}/>;
     case 'Routing': return <RoutingView/>;
-    case 'Providers': return <ProvidersView/>;
+    case 'Providers': return <ProvidersView onConnect={onConnectProvider}/>;
     case 'Observability': return <ObservabilityView/>;
     case 'Webhooks': return <WebhooksView/>;
     case 'Developers': return <DevelopersView/>;

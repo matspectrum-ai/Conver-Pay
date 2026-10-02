@@ -4,6 +4,45 @@ export const providers = [
   { id: "blackcat", name: "BlackCat", share: 18, latency: 612, success: 94.8, score: 0.63, state: "degraded" as const },
 ];
 
+export const connectorCatalog = [
+  {
+    key: "woovi",
+    name: "Woovi",
+    version: "1.0.0",
+    status: "Production-qualified",
+    capabilities: ["Pix create", "Payment query", "Create reconciliation", "Webhooks"],
+    credential: "AppID",
+    connections: 1,
+  },
+  {
+    key: "pagarme",
+    name: "Pagar.me",
+    version: "draft",
+    status: "Contract-ready",
+    capabilities: ["Payment create", "Payment query", "Webhooks"],
+    credential: "API key + secret",
+    connections: 1,
+  },
+  {
+    key: "stripe",
+    name: "Stripe",
+    version: "planned",
+    status: "Not connected",
+    capabilities: ["Payment create", "Payment query", "Refund", "Webhooks"],
+    credential: "Secret key",
+    connections: 0,
+  },
+  {
+    key: "mercado-pago",
+    name: "Mercado Pago",
+    version: "planned",
+    status: "Not connected",
+    capabilities: ["Payment create", "Payment query", "Webhooks"],
+    credential: "Access token",
+    connections: 0,
+  },
+];
+
 export const recoveries = [
   { id: "rec_4821", amount: "R$ 197,00", from: "BlackCat", to: "Woovi", age: "18s", reason: "503 upstream" },
   { id: "rec_4820", amount: "R$ 49,90", from: "Pagar.me", to: "Woovi", age: "41s", reason: "hard failure" },
